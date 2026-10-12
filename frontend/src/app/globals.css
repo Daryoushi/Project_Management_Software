@@ -1,0 +1,193 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Pinar';
+  src: url('/fonts/pinar/Pinar-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pinar';
+  src: url('/fonts/pinar/Pinar-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pinar';
+  src: url('/fonts/pinar/Pinar-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pinar';
+  src: url('/fonts/pinar/Pinar-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pinar';
+  src: url('/fonts/pinar/Pinar-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    /* Palette: Charcoal Gray + Cobalt Carbon Blue + White */
+    --background: 220 20% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Cobalt / Carbon Blue (#1d4ed8 / #2563eb) */
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Charcoal / Dark Slate tokens */
+    --charcoal: 222 24% 15%;
+    --charcoal-foreground: 210 40% 98%;
+
+    --secondary: 217 19% 92%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 216 20% 94%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 221 83% 96%;
+    --accent-foreground: 221 83% 53%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 20% 88%;
+    --input: 214 20% 88%;
+    --ring: 221 83% 53%;
+    --radius: 0.65rem;
+  }
+
+  .dark {
+    --background: 222 28% 10%; /* Dark Charcoal Base */
+    --foreground: 210 40% 98%;
+    --card: 222 24% 14%; /* Elevated Charcoal Card */
+    --card-foreground: 210 40% 98%;
+    --popover: 222 24% 14%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Cobalt Carbon Blue in Dark Mode */
+    --primary: 221 83% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 222 20% 20%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 222 20% 18%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 222 20% 22%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 222 18% 22%;
+    --input: 222 18% 22%;
+    --ring: 221 83% 60%;
+  }
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html, body {
+  font-family: 'Pinar', system-ui, -apple-system, sans-serif !important;
+  scroll-behavior: smooth;
+}
+
+[dir="rtl"] {
+  letter-spacing: normal;
+}
+
+/* Custom sleek scrollbar for enterprise UI */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.28);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.7);
+}
+
+/* Ensure modal containers maintain clean right-side scrollbar in Persian RTL mode */
+[dir="rtl"] .overflow-y-auto,
+[dir="rtl"] .overflow-y-scroll {
+  scrollbar-gutter: stable;
+  direction: ltr;
+}
+
+[dir="rtl"] .overflow-y-auto > *,
+[dir="rtl"] .overflow-y-scroll > * {
+  direction: rtl;
+}
+
+/* Exclude gantt and horizontal boards from direction flipping */
+[dir="rtl"] .overflow-x-auto {
+  direction: rtl;
+}
+
+/* Dynamic showcase animations */
+@keyframes slideDownFade {
+  0% {
+    opacity: 0;
+    transform: translateY(-24px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(37, 99, 235, 0.12);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(37, 99, 235, 0.28);
+  }
+}
+
+.animate-cascade-1 {
+  animation: slideDownFade 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+}
+
+.animate-cascade-2 {
+  animation: slideDownFade 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.6s backwards;
+}
+
+.animate-cascade-3 {
+  animation: slideDownFade 0.7s cubic-bezier(0.16, 1, 0.3, 1) 1.2s backwards;
+}
+
+.animate-cascade-4 {
+  animation: slideDownFade 0.7s cubic-bezier(0.16, 1, 0.3, 1) 1.8s backwards;
+}
+
+.animate-glow {
+  animation: pulseGlow 4s ease-in-out infinite;
+}
