@@ -54,3 +54,5 @@ create_rubric_document.py
 generate_answers.py
 test_base.txt
 webinar_transcript_summary.md
+
+.vercel
