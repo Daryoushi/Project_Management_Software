@@ -25,18 +25,29 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && window.location.hostname === 'project-management-software-black-six.vercel.app') {
+                window.location.replace('https://project-management-software.vercel.app' + window.location.pathname + window.location.search + window.location.hash);
+              }
+            `,
+          }}
+        />
         <Script
           src="https://accounts.google.com/gsi/client"
           strategy="beforeInteractive"
         />
-        <Script
-          src="//unpkg.com/react-grab/dist/index.global.js"
-          crossOrigin="anonymous"
-          strategy="beforeInteractive"
-        />
+        {process.env.NODE_ENV === "development" && (
+          <Script
+            src="//unpkg.com/react-grab/dist/index.global.js"
+            crossOrigin="anonymous"
+            strategy="beforeInteractive"
+          />
+        )}
       </head>
       <body className="min-h-screen bg-background font-sans antialiased text-foreground">
-        <ReactGrabInit />
+        {process.env.NODE_ENV === "development" && <ReactGrabInit />}
         <AppProvider>{children}</AppProvider>
       </body>
     </html>

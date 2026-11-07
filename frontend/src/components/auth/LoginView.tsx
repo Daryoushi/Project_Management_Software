@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useApp } from "@/lib/context";
 import { api } from "@/lib/api";
+import { getOAuthRedirectUri } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -439,7 +440,7 @@ export function LoginView() {
     }
 
     // 2. Direct Redirect to Google Official Account Chooser
-    const redirectUri = window.location.origin;
+    const redirectUri = getOAuthRedirectUri();
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token%20id_token&scope=openid%20email%20profile&nonce=${Date.now()}&prompt=select_account`;
     window.location.href = googleAuthUrl;
   };
@@ -539,10 +540,10 @@ export function LoginView() {
         }
       } catch (e) {}
 
-      const redirectUri = window.location.origin;
+      const redirectUri = getOAuthRedirectUri();
       window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId.trim()}&scope=read:user,user:email,repo&redirect_uri=${encodeURIComponent(redirectUri)}`;
     } catch (err: any) {
-      const redirectUri = window.location.origin;
+      const redirectUri = getOAuthRedirectUri();
       window.location.href = `https://github.com/login/oauth/authorize?client_id=${DEFAULT_GITHUB_CLIENT_ID}&scope=read:user,user:email,repo&redirect_uri=${encodeURIComponent(redirectUri)}`;
     } finally {
       setLoading(false);
@@ -568,7 +569,7 @@ export function LoginView() {
         client_secret: githubClientSecret.trim(),
       });
       setShowGithubModal(false);
-      const redirectUri = window.location.origin;
+      const redirectUri = getOAuthRedirectUri();
       window.location.href = `https://github.com/login/oauth/authorize?client_id=${githubClientId.trim()}&scope=read:user,user:email,repo&redirect_uri=${encodeURIComponent(redirectUri)}`;
     } catch (err: any) {
       setError(err.message || (lang === "fa" ? "خطا در ذخیره مشخصات گیت‌هاب" : "Failed to save GitHub credentials"));

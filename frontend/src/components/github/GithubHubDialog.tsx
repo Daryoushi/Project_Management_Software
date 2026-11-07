@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useApp } from "@/lib/context";
 import { api, Project } from "@/lib/api";
 import { toPersianDigits } from "@/lib/jalali";
+import { getOAuthRedirectUri } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -191,7 +192,7 @@ export function GithubHubDialog() {
         client_id: clientIdInput.trim(),
         client_secret: clientSecretInput.trim(),
       });
-      const redirectUri = window.location.origin;
+      const redirectUri = getOAuthRedirectUri();
       window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientIdInput.trim()}&scope=read:user,user:email,repo&redirect_uri=${encodeURIComponent(redirectUri)}`;
     } catch (e: any) {
       setErrorMsg(e.message || "خطا در ذخیره تنظیمات OAuth");
@@ -777,7 +778,7 @@ export function GithubHubDialog() {
                     <Button
                       type="button"
                       onClick={() => {
-                        const redirectUri = window.location.origin;
+                        const redirectUri = getOAuthRedirectUri();
                         window.location.href = `https://github.com/login/oauth/authorize?client_id=Ov23lixQ9dfGWHJeVMoi&scope=read:user,user:email,repo&redirect_uri=${encodeURIComponent(redirectUri)}`;
                       }}
                       className="h-10 px-5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md gap-2 shrink-0 cursor-pointer"
