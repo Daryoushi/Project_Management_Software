@@ -44,3 +44,13 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Audio and temporary scratch files
+audio_chunks/
+*.mp3
+*.wav
+*.woff2
+create_rubric_document.py
+generate_answers.py
+test_base.txt
+webinar_transcript_summary.md
