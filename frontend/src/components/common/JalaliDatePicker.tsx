@@ -11,7 +11,8 @@ import {
   toPersianDigits,
   formatDateLocale,
   ENGLISH_MONTH_NAMES,
-  ENGLISH_WEEK_DAYS
+  ENGLISH_WEEK_DAYS,
+  getCalendarDayDetails,
 } from "@/lib/jalali";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -284,12 +285,13 @@ export function JalaliDatePicker({
                   ? defaultJ.jy === currentJYear && defaultJ.jm === currentJMonth && defaultJ.jd === day
                   : defaultG.gy === currentGYear && defaultG.gm === currentGMonth && defaultG.gd === day);
 
-              // Calculate day of week to highlight Fridays / weekends in red
+              // Calculate holiday status (Fridays + Midweek official holidays like 22 Bahman, Nowruz, etc.)
               let isHoliday = false;
+              let holidayTitle: string | null = null;
               if (lang === "fa") {
-                const { gy, gm, gd } = jalaliToGregorian(currentJYear, currentJMonth, day);
-                const jsDay = new Date(gy, gm - 1, gd).getDay();
-                isHoliday = jsDay === 5; // Friday (جمعه) in JS getDay() is 5
+                const details = getCalendarDayDetails(currentJYear, currentJMonth, day);
+                isHoliday = details.isHoliday;
+                holidayTitle = details.holidayTitle;
               } else {
                 const jsDay = new Date(currentGYear, currentGMonth - 1, day).getDay();
                 isHoliday = jsDay === 0; // Sunday in Western calendar
@@ -299,6 +301,7 @@ export function JalaliDatePicker({
                 <button
                   key={day}
                   type="button"
+                  title={holidayTitle || undefined}
                   onClick={() => selectDay(day)}
                   className={`h-7 w-7 rounded-lg text-xs font-semibold flex items-center justify-center transition-all ${
                     isSelected

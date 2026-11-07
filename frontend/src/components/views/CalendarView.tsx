@@ -12,7 +12,7 @@ import {
   PERSIAN_WEEK_DAYS,
   ENGLISH_WEEK_DAYS,
   toPersianDigits,
-  getJalaliOccasion,
+  getCalendarDayDetails,
 } from "@/lib/jalali";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon } from "lucide-react";
@@ -190,26 +190,34 @@ export function CalendarView() {
               : currentGYear === now.getFullYear() && currentGMonth === now.getMonth() + 1 && dayNum === now.getDate();
 
           let isHoliday = false;
+          let holidayTitle: string | null = null;
+          let occasion: string | null = null;
+          let gregorianText = "";
+          let hijriText = "";
+
           if (lang === "fa") {
-            const { gy, gm, gd } = jalaliToGregorian(currentJYear, currentJMonth, dayNum);
-            const jsDay = new Date(gy, gm - 1, gd).getDay();
-            isHoliday = jsDay === 5; // Friday
+            const details = getCalendarDayDetails(currentJYear, currentJMonth, dayNum);
+            isHoliday = details.isHoliday;
+            holidayTitle = details.holidayTitle;
+            occasion = details.occasionTitle;
+            gregorianText = details.gregorian.shortText;
+            hijriText = details.hijri.shortText;
           } else {
             const jsDay = new Date(currentGYear, currentGMonth - 1, dayNum).getDay();
             isHoliday = jsDay === 0; // Sunday
+            gregorianText = `${dayNum} ${ENGLISH_MONTH_NAMES[currentGMonth - 1]?.slice(0, 3)}`;
           }
 
           const dayTasks = tasksByDay[dayNum] || [];
-          const occasion = lang === "fa" ? getJalaliOccasion(currentJMonth, dayNum) : null;
 
           return (
             <div
               key={dayNum}
-              className={`min-h-[85px] sm:min-h-[120px] p-2 rounded-xl border transition-all flex flex-col justify-between ${
+              className={`min-h-[95px] sm:min-h-[130px] p-2 rounded-xl border transition-all flex flex-col justify-between ${
                 isToday
                   ? "bg-primary/5 border-primary shadow-xs ring-1 ring-primary/40"
                   : isHoliday
-                  ? "bg-rose-500/5 border-rose-200/60 dark:border-rose-900/40 hover:bg-rose-500/10"
+                  ? "bg-rose-500/10 border-rose-300 dark:border-rose-900/60 shadow-xs hover:bg-rose-500/15"
                   : "bg-card hover:border-primary/40 hover:bg-muted/20"
               }`}
             >
@@ -217,12 +225,12 @@ export function CalendarView() {
               <div>
                 <div className="flex items-center justify-between">
                   <span
-                    className={`text-xs font-bold h-6 w-6 rounded-full flex items-center justify-center ${
+                    className={`text-xs h-6 w-6 rounded-full flex items-center justify-center ${
                       isToday
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-primary text-primary-foreground font-bold"
                         : isHoliday
-                        ? "text-rose-600 dark:text-rose-400 font-extrabold"
-                        : "text-muted-foreground"
+                        ? "text-rose-600 dark:text-rose-400 font-black"
+                        : "text-muted-foreground font-bold"
                     }`}
                   >
                     {lang === "fa" ? toPersianDigits(dayNum) : dayNum}
@@ -236,8 +244,12 @@ export function CalendarView() {
 
                 {occasion && (
                   <div
-                    className="mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold truncate bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
-                    title={occasion}
+                    className={`mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold truncate ${
+                      isHoliday
+                        ? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
+                        : "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
+                    }`}
+                    title={holidayTitle || occasion}
                   >
                     {occasion}
                   </div>
@@ -245,7 +257,7 @@ export function CalendarView() {
               </div>
 
               {/* Tasks in this day */}
-              <div className="space-y-1.5 my-1 overflow-y-auto max-h-[80px]">
+              <div className="space-y-1 my-1 overflow-y-auto max-h-[70px]">
                 {dayTasks.map((task) => (
                   <div
                     key={task.id}
@@ -266,8 +278,17 @@ export function CalendarView() {
                 ))}
               </div>
 
-              {/* Empty state hint */}
-              {dayTasks.length === 0 && <div className="h-2" />}
+              {/* Footer: Gregorian (میلادی) & Islamic Lunar (قمری) Dates */}
+              <div className="pt-1.5 mt-auto border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[9px] text-muted-foreground select-none">
+                <span className="font-mono text-slate-400 dark:text-slate-500 tracking-tight" title={lang === "fa" ? "تاریخ میلادی" : "Gregorian"}>
+                  {gregorianText}
+                </span>
+                {lang === "fa" && hijriText && (
+                  <span className="font-sans text-slate-500 dark:text-slate-400 font-medium" title="تاریخ هجری قمری">
+                    {hijriText}
+                  </span>
+                )}
+              </div>
             </div>
           );
         })}
