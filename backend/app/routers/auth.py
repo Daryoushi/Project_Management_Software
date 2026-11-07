@@ -31,6 +31,22 @@ def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
     cursor = conn.cursor()
     cursor.execute("SELECT id, email, full_name, avatar_url, global_role, preferred_lang, theme, created_at FROM users WHERE id = ?", (payload["sub"],))
     row = cursor.fetchone()
+
+    # Fallback by email if ID not matched
+    if not row and "email" in payload:
+        cursor.execute("SELECT id, email, full_name, avatar_url, global_role, preferred_lang, theme, created_at FROM users WHERE LOWER(email) = LOWER(?)", (payload["email"],))
+        row = cursor.fetchone()
+
+    # If still not found (cold start), auto seed and re-check
+    if not row:
+        try:
+            from app.seed_demo_data import seed as seed_demo
+            seed_demo()
+            cursor.execute("SELECT id, email, full_name, avatar_url, global_role, preferred_lang, theme, created_at FROM users WHERE id = ? OR LOWER(email) = LOWER(?)", (payload["sub"], payload.get("email", "")))
+            row = cursor.fetchone()
+        except Exception:
+            pass
+
     conn.close()
 
     if not row:
@@ -565,8 +581,6 @@ def send_email_change_code(data: dict, current_user: dict = Depends(get_current_
     new_email = data.get("email", "").strip().lower()
     if not new_email or "@" not in new_email:
         raise HTTPException(status_code=400, detail="آدرس ایمیل معتبر نیست.")
-    if new_email == current_user["email"]:
-        raise HTTPException(status_code=400, detail="این آدرس همان ایمیل فعلی شما است.")
 
     conn = get_db()
     cursor = conn.cursor()

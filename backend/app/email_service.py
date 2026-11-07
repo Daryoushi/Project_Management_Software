@@ -89,11 +89,11 @@ def send_real_email(to_email: str, subject: str, code: str, purpose: str = "تأ
 </html>"""
 
     load_env_file()
-    smtp_user = os.getenv("SMTP_USER", "").strip()
-    smtp_password = os.getenv("SMTP_PASSWORD", "").strip().replace(" ", "")
+    smtp_user = os.getenv("SMTP_USER", "project.management.software.d@gmail.com").strip()
+    smtp_password = os.getenv("SMTP_PASSWORD", "kzhdwockhhelmhpc").strip().replace(" ", "")
     smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com").strip()
     smtp_port = int(os.getenv("SMTP_PORT", "587"))
-    smtp_from = os.getenv("SMTP_FROM", smtp_user or "noreply@projectmanagement.local").strip()
+    smtp_from = os.getenv("SMTP_FROM", smtp_user or "project.management.software.d@gmail.com").strip()
     smtp_use_tls = os.getenv("SMTP_USE_TLS", "true").lower() in ("true", "1", "yes")
 
     if not smtp_user or not smtp_password:
@@ -193,11 +193,11 @@ def send_invitation_email(to_email: str, inviter_name: str, workspace_name: str,
 </html>"""
 
     load_env_file()
-    smtp_user = os.getenv("SMTP_USER", "").strip()
-    smtp_password = os.getenv("SMTP_PASSWORD", "").strip().replace(" ", "")
+    smtp_user = os.getenv("SMTP_USER", "project.management.software.d@gmail.com").strip()
+    smtp_password = os.getenv("SMTP_PASSWORD", "kzhdwockhhelmhpc").strip().replace(" ", "")
     smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com").strip()
     smtp_port = int(os.getenv("SMTP_PORT", "587"))
-    smtp_from = os.getenv("SMTP_FROM", smtp_user or "noreply@projectmanagement.local").strip()
+    smtp_from = os.getenv("SMTP_FROM", smtp_user or "project.management.software.d@gmail.com").strip()
     smtp_use_tls = os.getenv("SMTP_USE_TLS", "true").lower() in ("true", "1", "yes")
 
     if not smtp_user or not smtp_password:
@@ -325,11 +325,11 @@ def send_task_assigned_email(
 </html>"""
 
     load_env_file()
-    smtp_user = os.getenv("SMTP_USER", "").strip()
-    smtp_password = os.getenv("SMTP_PASSWORD", "").strip().replace(" ", "")
+    smtp_user = os.getenv("SMTP_USER", "project.management.software.d@gmail.com").strip()
+    smtp_password = os.getenv("SMTP_PASSWORD", "kzhdwockhhelmhpc").strip().replace(" ", "")
     smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com").strip()
     smtp_port = int(os.getenv("SMTP_PORT", "587"))
-    smtp_from = os.getenv("SMTP_FROM", smtp_user or "noreply@projectmanagement.local").strip()
+    smtp_from = os.getenv("SMTP_FROM", smtp_user or "project.management.software.d@gmail.com").strip()
     smtp_use_tls = os.getenv("SMTP_USE_TLS", "true").lower() in ("true", "1", "yes")
 
     if not smtp_user or not smtp_password:

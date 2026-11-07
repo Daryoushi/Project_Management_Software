@@ -15,7 +15,10 @@ if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
 else:
     DB_PATH = os.environ.get("DB_PATH", ORIGINAL_DB_PATH)
 
+_db_checked = False
+
 def get_db():
+    global _db_checked
     conn = sqlite3.connect(DB_PATH, timeout=30.0, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
@@ -23,6 +26,21 @@ def get_db():
         conn.execute("PRAGMA journal_mode = WAL")
     except Exception:
         pass
+
+    if not _db_checked:
+        _db_checked = True
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+            if not cur.fetchone():
+                init_db()
+            cur.execute("SELECT COUNT(*) FROM users")
+            if cur.fetchone()[0] == 0:
+                from app.seed_demo_data import seed as seed_demo
+                seed_demo()
+        except Exception as e:
+            print("[DB AUTO-INIT NOTICE]", e)
+
     return conn
 
 def init_db():
