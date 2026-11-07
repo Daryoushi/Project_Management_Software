@@ -744,11 +744,34 @@ export function GithubHubDialog() {
               {/* Method 3 Content: Official OAuth */}
               {connectMethod === "oauth" && (
                 <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#121620] space-y-4 animate-in fade-in">
-                  <div className="flex items-center justify-between">
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-slate-900 to-slate-800 text-white flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
                     <div>
-                      <h5 className="font-bold text-xs text-foreground">تنظیم ورود رسمی گیت‌هاب (OAuth Application)</h5>
+                      <h5 className="font-extrabold text-sm flex items-center gap-2">
+                        <GithubIcon className="h-4 w-4" />
+                        <span>اتصال مستقیم با گیت‌هاب (پیش‌فرض سیستم)</span>
+                      </h5>
+                      <p className="text-xs text-slate-300 mt-1">
+                        با یک کلیک مستقیماً وارد گیت‌هاب شده و حساب کاربری خود را متصل فرمایید.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const redirectUri = window.location.origin;
+                        window.location.href = `https://github.com/login/oauth/authorize?client_id=Ov23lixQ9dfGWHJeVMoi&scope=read:user,user:email,repo&redirect_uri=${encodeURIComponent(redirectUri)}`;
+                      }}
+                      className="h-10 px-5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md gap-2 shrink-0 cursor-pointer"
+                    >
+                      <GithubIcon className="h-4 w-4" />
+                      <span>اتصال مستقیم به GitHub</span>
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <div>
+                      <h5 className="font-bold text-xs text-foreground">تنظیم ورود اختصاصی گیت‌هاب (کلاینت شخصی)</h5>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
-                        جهت باز شدن صفحه سبز رسمی Authorize در گیت‌هاب، مقادیر Client ID و Client Secret را از صفحه OAuth App در گیت‌هاب کپی کنید:
+                        در صورت تمایل به استفاده از Client ID و Client Secret اختصاصی خود:
                       </p>
                     </div>
                     <a

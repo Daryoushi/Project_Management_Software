@@ -523,30 +523,27 @@ export function LoginView() {
     }
   };
 
-  // Trigger GitHub OAuth Authorize Page
+  const DEFAULT_GITHUB_CLIENT_ID = "Ov23lixQ9dfGWHJeVMoi";
+
+  // Trigger GitHub OAuth Authorize Page - opens GitHub directly!
   const handleStartGithubOAuth = async () => {
     setError("");
     setInfoMsg("");
     setLoading(true);
     try {
-      let clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
-      if (!clientId) {
+      let clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID || DEFAULT_GITHUB_CLIENT_ID;
+      try {
         const cfg = await api.getGithubConfig();
-        clientId = cfg.client_id;
-      }
+        if (cfg.client_id) {
+          clientId = cfg.client_id;
+        }
+      } catch (e) {}
 
-      const isValidClientId = clientId && clientId.trim() && !clientId.includes("@") && clientId.length >= 8;
-
-      if (isValidClientId) {
-        const redirectUri = window.location.origin;
-        window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId.trim()}&scope=read:user,user:email,repo&redirect_uri=${encodeURIComponent(redirectUri)}`;
-        return;
-      }
-
-      // If client_id is not yet configured or invalid, show OAuth setup modal
-      setShowGithubModal(true);
+      const redirectUri = window.location.origin;
+      window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId.trim()}&scope=read:user,user:email,repo&redirect_uri=${encodeURIComponent(redirectUri)}`;
     } catch (err: any) {
-      setShowGithubModal(true);
+      const redirectUri = window.location.origin;
+      window.location.href = `https://github.com/login/oauth/authorize?client_id=${DEFAULT_GITHUB_CLIENT_ID}&scope=read:user,user:email,repo&redirect_uri=${encodeURIComponent(redirectUri)}`;
     } finally {
       setLoading(false);
     }

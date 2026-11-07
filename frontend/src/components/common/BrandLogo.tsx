@@ -23,6 +23,7 @@ export function BrandLogo({ className = "h-8 w-8", size = 32 }: LogoProps) {
         height={size}
         className="w-full h-full object-cover select-none"
         priority
+        unoptimized
       />
     </div>
   );

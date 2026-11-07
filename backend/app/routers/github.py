@@ -21,7 +21,7 @@ def is_valid_github_client_id(cid: str) -> bool:
 def get_github_config():
     from app.email_service import load_env_file
     load_env_file()
-    client_id = os.getenv("GITHUB_CLIENT_ID", "").strip()
+    client_id = os.getenv("GITHUB_CLIENT_ID", "Ov23lixQ9dfGWHJeVMoi").strip() or "Ov23lixQ9dfGWHJeVMoi"
     is_valid = is_valid_github_client_id(client_id)
     return {"client_id": client_id if is_valid else "", "configured": is_valid}
 
