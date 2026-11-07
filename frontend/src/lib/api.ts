@@ -148,8 +148,23 @@ export const api = {
     });
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: "Request failed" }));
-      throw new Error(err.detail || `Error ${res.status}`);
+      let detail = `Error ${res.status}`;
+      try {
+        const err = await res.json();
+        if (typeof err.detail === "string") {
+          detail = err.detail;
+        } else if (Array.isArray(err.detail)) {
+          detail = err.detail.map((d: any) => d.msg || JSON.stringify(d)).join(", ");
+        } else if (err.message) {
+          detail = err.message;
+        }
+      } catch {
+        try {
+          const txt = await res.text();
+          if (txt && txt.length < 200) detail = txt;
+        } catch {}
+      }
+      throw new Error(detail);
     }
 
     return res.json();

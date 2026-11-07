@@ -149,7 +149,7 @@ export function HomeView() {
               category: lang === "fa" ? "مهندسی نرم‌افزار" : "Software Engineering",
               desc: lang === "fa" ? "چرخه اسپرینت ۲ هفته‌ای، اتصال مستقیم به مخزن گیت‌هاب و ترکینگ Issueها" : "2-week agile sprint cycle, direct GitHub sync, issue tracking & code review.",
               color: "#2563eb",
-              pipeline: lang === "fa" ? "بک‌لاگ ← توسعه ← کد ریویو ← انتشار" : "Backlog → In Dev → Review → Done",
+              stages: lang === "fa" ? ["بک‌لاگ", "توسعه", "کد ریویو", "انتشار"] : ["Backlog", "In Dev", "Code Review", "Done"],
               tags: lang === "fa" ? ["گیت‌هاب", "بورد اسکرام", "کد ریویو"] : ["GitHub", "Scrum Board", "Code Review"],
               stats: lang === "fa" ? "۴ فاز • ۴ نقش فنی" : "4 Stages • 4 Roles",
             },
@@ -158,7 +158,7 @@ export function HomeView() {
               category: lang === "fa" ? "مدیریت محصول" : "Product Management",
               desc: lang === "fa" ? "زمان‌بندی فازهای لانچ، نقاط عطف (Milestones)، هماهنگی مارکتینگ و طراحی" : "Multi-phase launch timeline, strategic milestones & cross-team alignment.",
               color: "#7c3aed",
-              pipeline: lang === "fa" ? "تحقیق ← پروتوتایپ ← تست بتا ← عرضه عمومی" : "Research → Prototype → Beta → Launch",
+              stages: lang === "fa" ? ["تحقیق", "پروتوتایپ", "تست بتا", "عرضه عمومی"] : ["Research", "Prototype", "Beta Test", "Launch"],
               tags: lang === "fa" ? ["تایم‌لاین گانت", "نقاط عطف", "مارکتینگ"] : ["Gantt", "Milestones", "Marketing"],
               stats: lang === "fa" ? "۵ مایل‌استون • تقویم گانت" : "5 Milestones • Gantt",
             },
@@ -167,7 +167,7 @@ export function HomeView() {
               category: lang === "fa" ? "عملیات و QA" : "DevOps & QA",
               desc: lang === "fa" ? "اولویت‌بندی خطاهای سیستمی، پایبندی به SLA، تست رگرسیون و مستندات ریشه‌ای" : "Triage critical defects, track SLA response, regression testing & RCA notes.",
               color: "#dc2626",
-              pipeline: lang === "fa" ? "گزارش ← تریاژ فوری ← اصلاح ← تأیید تست" : "Reported → Triaged → Fix → Verified",
+              stages: lang === "fa" ? ["گزارش", "تریاژ فوری", "اصلاح", "تأیید تست"] : ["Reported", "Triaged", "Fix", "Verified"],
               tags: lang === "fa" ? ["SLA فوری", "تست QA", "ردیابی خطا"] : ["Fast SLA", "QA Testing", "Bugs"],
               stats: lang === "fa" ? "سطوح فوریت • هشدار SLA" : "Urgent SLA • Alerts",
             },
@@ -176,7 +176,7 @@ export function HomeView() {
               category: lang === "fa" ? "منابع انسانی" : "People & HR",
               desc: lang === "fa" ? "چک‌لیست ۳۰ روزه پیوستن به تیم، اعطای دسترسی‌ها، جلسات معارفه و انتقال دانش" : "Structured 30-day onboarding checklist, tool access, buddy pairing & culture guide.",
               color: "#059669",
-              pipeline: lang === "fa" ? "پیش‌آمادگی ← روز اول ← هفته اول ← ماه اول" : "Pre-hire → Day 1 → Week 1 → Month 1",
+              stages: lang === "fa" ? ["پیش‌آمادگی", "روز اول", "هفته اول", "ماه اول"] : ["Pre-hire", "Day 1", "Week 1", "Month 1"],
               tags: lang === "fa" ? ["چک‌لیست سازمانی", "تجهیزات", "معارفه"] : ["Checklist", "Access", "Culture"],
               stats: lang === "fa" ? "چک‌لیست مرحله‌ای • بازه ۳۰ روزه" : "Step Checklist • 30 Days",
             },
@@ -204,16 +204,29 @@ export function HomeView() {
                     {template.title}
                   </h3>
 
-                  <p className="text-xs text-muted-foreground leading-relaxed">
+                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
                     {template.desc}
                   </p>
 
-                  {/* Visual Pipeline Bar */}
-                  <div className="p-2 rounded-xl bg-muted/40 border border-muted/50 text-[10px] text-muted-foreground font-mono">
-                    <span className="font-bold text-foreground block mb-0.5 text-[9px] font-sans">
+                  {/* Visual Pipeline Stages */}
+                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
+                    <span className="font-bold text-foreground block mb-1.5 text-[10px]">
                       {lang === "fa" ? "مراحل گردش کار:" : "Workflow Pipeline:"}
                     </span>
-                    <span className="text-primary font-semibold">{template.pipeline}</span>
+                    <div className="flex flex-wrap items-center gap-1">
+                      {template.stages.map((stage, sIdx) => (
+                        <React.Fragment key={sIdx}>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 font-bold text-[10px] shadow-2xs">
+                            {stage}
+                          </span>
+                          {sIdx < template.stages.length - 1 && (
+                            <span className="text-slate-400 dark:text-slate-500 text-[10px] font-bold px-0.5">
+                              {lang === "fa" ? "←" : "→"}
+                            </span>
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Tags */}

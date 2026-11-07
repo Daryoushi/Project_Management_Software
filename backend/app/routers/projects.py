@@ -74,9 +74,14 @@ def create_project(proj_data: ProjectCreate, current_user: dict = Depends(get_cu
     cursor = conn.cursor()
 
     # Check permission in workspace
+    cursor.execute("SELECT owner_id FROM workspaces WHERE id = ?", (proj_data.workspace_id,))
+    ws_row = cursor.fetchone()
+    is_owner = ws_row and ws_row["owner_id"] == current_user["id"]
+    is_global_admin = current_user.get("global_role") in ["admin", "super_admin"]
+
     cursor.execute("SELECT role FROM workspace_members WHERE workspace_id = ? AND user_id = ?", (proj_data.workspace_id, current_user["id"]))
     row = cursor.fetchone()
-    if not row or row["role"] == "viewer":
+    if not is_owner and not is_global_admin and (not row or row["role"] == "viewer"):
         conn.close()
         raise HTTPException(status_code=403, detail="مشاهده‌گر نمی‌تواند پروژه جدید ایجاد کند.")
 
