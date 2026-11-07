@@ -72,7 +72,7 @@ def seed_database():
         INSERT INTO workspaces (id, name, description, icon, color, owner_id, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (
-        ws_id, "استارکوچ / StarKooch Workspace",
+        ws_id, "فضای کاری اصلی / Main Workspace",
         "فضای کاری اصلی تیم مدیریت پروژه و توسعه محصول",
         "Briefcase", "#6366F1", "user-abalfazl", now_str
     ))
@@ -247,7 +247,7 @@ def seed_database():
     """, (
         str(uuid.uuid4()), "user-abalfazl",
         "به سامانه مدیریت پروژه خوش آمدید!",
-        "فضای کاری 'استارکوچ' و پروژه 'پروژه اول ابوالفضل' برای شما آماده است.",
+        "فضای کاری اصلی و پروژه 'پروژه اول اباالفضل' برای شما آماده است.",
         "/projects/proj-first", "info", now_str
     ))
 
