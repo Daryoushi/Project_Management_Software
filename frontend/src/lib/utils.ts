@@ -6,10 +6,6 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function getOAuthRedirectUri(): string {
-  if (typeof window === "undefined") return "https://project-management-software.vercel.app";
-  const hostname = window.location.hostname;
-  if (hostname === "localhost" || hostname === "127.0.0.1") {
-    return window.location.origin;
-  }
-  return "https://project-management-software.vercel.app";
+  if (typeof window === "undefined") return "https://taskflow-pm.vercel.app";
+  return window.location.origin;
 }

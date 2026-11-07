@@ -25,15 +25,6 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if (typeof window !== 'undefined' && window.location.hostname === 'project-management-software-black-six.vercel.app') {
-                window.location.replace('https://project-management-software.vercel.app' + window.location.pathname + window.location.search + window.location.hash);
-              }
-            `,
-          }}
-        />
         <Script
           src="https://accounts.google.com/gsi/client"
           strategy="beforeInteractive"
