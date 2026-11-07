@@ -971,6 +971,33 @@ export function LoginView() {
                   )
                 ) : (
                   <div className="space-y-4">
+                    {/* Quick Demo Sign-In Card for Portfolio Presentation */}
+                    <div className="p-3 rounded-2xl bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-blue-500/10 border border-blue-500/30 flex items-center justify-between shadow-xs">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="h-9 w-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">
+                          AD
+                        </div>
+                        <div className="truncate">
+                          <p className="font-bold text-xs truncate flex items-center gap-1.5 text-foreground">
+                            <span>{lang === "fa" ? "اباالفضل داریوشی" : "Abalfazl Daryoushi"}</span>
+                            <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-blue-600/20 text-blue-600 dark:text-blue-400 font-semibold">
+                              {lang === "fa" ? "اکانت دمو" : "Demo"}
+                            </span>
+                          </p>
+                          <p className="text-[11px] text-muted-foreground truncate font-mono">abalfazl.daryoushii@gmail.com</p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => handleDirectAuth("abalfazl.daryoushii@gmail.com")}
+                        disabled={loading}
+                        className="h-8 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-xs px-3.5 transition-all shrink-0 cursor-pointer"
+                      >
+                        {loading ? "..." : (lang === "fa" ? "ورود فوری" : "Quick Sign-in")}
+                      </Button>
+                    </div>
+
                     {/* One-Click Direct Sign-In (Google & GitHub) */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <Button
