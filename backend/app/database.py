@@ -30,7 +30,7 @@ def get_db():
         if not cur.fetchone():
             init_db(conn)
             from app.seed_demo_data import seed
-            seed()
+            seed(conn)
     except Exception as e:
         print("[DB AUTO-INIT NOTICE]", e)
 

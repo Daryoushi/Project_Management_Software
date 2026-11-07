@@ -8,9 +8,11 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from app.database import get_db, init_db
 
-def seed():
-    init_db()
-    conn = get_db()
+def seed(conn=None):
+    should_close = False
+    if conn is None:
+        conn = get_db()
+        should_close = True
     cur = conn.cursor()
 
     target_emails = [
@@ -245,7 +247,8 @@ def seed():
         print(f"Seed complete for user: {user_id} ({target_email})")
 
     conn.commit()
-    conn.close()
+    if should_close:
+        conn.close()
 
 if __name__ == "__main__":
     seed()
