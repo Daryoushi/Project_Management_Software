@@ -26,7 +26,9 @@ export function CreateProjectDialog() {
   const {
     isCreateProjectOpen,
     setIsCreateProjectOpen,
+    workspaces,
     currentWorkspace,
+    setCurrentWorkspace,
     refreshWorkspacesAndProjects,
     setCurrentProject,
     setCurrentView,
@@ -78,15 +80,34 @@ export function CreateProjectDialog() {
 
   const colors = ["#6366F1", "#10B981", "#F59E0B", "#EC4899", "#8B5CF6", "#06B6D4", "#EF4444"];
 
+  const ensureWorkspace = async () => {
+    if (currentWorkspace?.id) return currentWorkspace.id;
+    if (workspaces.length > 0 && workspaces[0]?.id) {
+      setCurrentWorkspace(workspaces[0]);
+      return workspaces[0].id;
+    }
+    const wsList = await api.getWorkspaces().catch(() => []);
+    if (wsList.length > 0 && wsList[0]?.id) {
+      setCurrentWorkspace(wsList[0]);
+      return wsList[0].id;
+    }
+    const newWs = await api.createWorkspace({
+      name: lang === "fa" ? "فضای کاری من" : "My Workspace",
+    });
+    setCurrentWorkspace(newWs);
+    return newWs.id;
+  };
+
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !currentWorkspace) return;
+    if (!name.trim()) return;
 
     setLoading(true);
     setError("");
     try {
+      const wsId = await ensureWorkspace();
       const proj = await api.createProject({
-        workspace_id: currentWorkspace.id,
+        workspace_id: wsId,
         name: name.trim(),
         description: description.trim(),
         color,
@@ -95,7 +116,7 @@ export function CreateProjectDialog() {
       setName("");
       setDescription("");
       setIsCreateProjectOpen(false);
-      await refreshWorkspacesAndProjects();
+      await refreshWorkspacesAndProjects(wsId);
       setCurrentProject(proj);
       setCurrentView("list");
     } catch (err: any) {
@@ -130,7 +151,7 @@ export function CreateProjectDialog() {
 
   const handleGithubImport = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!githubRepoUrl.trim() || !currentWorkspace) {
+    if (!githubRepoUrl.trim()) {
       setError(lang === "fa" ? "لطفاً آدرس یا نام مخزن گیت‌هاب را وارد نمایید." : "Please enter repository URL.");
       return;
     }
@@ -138,15 +159,16 @@ export function CreateProjectDialog() {
     setLoading(true);
     setError("");
     try {
+      const wsId = await ensureWorkspace();
       const res = await api.importGithubProject({
-        workspace_id: currentWorkspace.id,
+        workspace_id: wsId,
         repo_url: githubRepoUrl.trim(),
         token: githubToken.trim() || undefined,
         import_issues: importIssues,
       });
 
       setSuccessMsg(res.message);
-      await refreshWorkspacesAndProjects();
+      await refreshWorkspacesAndProjects(wsId);
       setCurrentProject(res.project);
       setCurrentView("board");
 
@@ -164,10 +186,10 @@ export function CreateProjectDialog() {
 
   return (
     <Dialog open={isCreateProjectOpen} onOpenChange={setIsCreateProjectOpen}>
-      <DialogContent onClose={() => setIsCreateProjectOpen(false)} className="max-w-lg p-0 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
+      <DialogContent onClose={() => setIsCreateProjectOpen(false)} className="max-w-lg p-0 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col max-h-[88vh]">
         
         {/* Header with Switcher Tabs */}
-        <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#141822] p-4 sm:p-5">
+        <div className="shrink-0 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#141822] p-4 sm:p-5">
           <div className="flex items-center justify-between mb-3">
             <DialogTitle className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <FolderPlus className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -209,7 +231,7 @@ export function CreateProjectDialog() {
           </div>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="p-5 space-y-4 overflow-y-auto flex-1">
           {error && (
             <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs">
               <AlertCircle className="h-4 w-4 shrink-0" />

@@ -30,6 +30,29 @@ def get_user_workspaces(current_user: dict = Depends(get_current_user)):
     """, (current_user["id"],))
     workspaces = [dict(row) for row in cursor.fetchall()]
 
+    # If user has no workspaces, automatically ensure a default workspace exists
+    if not workspaces:
+        ws_id = f"ws-{uuid.uuid4().hex[:8]}"
+        now_str = datetime.utcnow().isoformat()
+        user_name = current_user.get("full_name") or current_user.get("email", "").split("@")[0] or "من"
+        ws_name = f"فضای کاری {user_name}"
+        cursor.execute("""
+            INSERT INTO workspaces (id, name, description, icon, color, owner_id, created_at)
+            VALUES (?, ?, ?, 'Briefcase', '#4F46E5', ?, ?)
+        """, (ws_id, ws_name, "فضای کاری اختصاصی شما", current_user["id"], now_str))
+        cursor.execute("""
+            INSERT INTO workspace_members (id, workspace_id, user_id, role, joined_at)
+            VALUES (?, ?, ?, 'owner', ?)
+        """, (str(uuid.uuid4()), ws_id, current_user["id"], now_str))
+        conn.commit()
+
+        cursor.execute("SELECT * FROM workspaces WHERE id = ?", (ws_id,))
+        created_ws = dict(cursor.fetchone())
+        created_ws["user_role"] = "owner"
+        created_ws["projects_count"] = 0
+        created_ws["members_count"] = 1
+        workspaces = [created_ws]
+
     for ws in workspaces:
         # Count projects
         cursor.execute("SELECT COUNT(*) FROM projects WHERE workspace_id = ?", (ws["id"],))
