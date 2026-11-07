@@ -873,7 +873,11 @@ export function LoginView() {
 
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          {lang === "fa" ? "پست الکترونیک *" : "Email Address *"}
+                          {lang === "fa" ? (
+                            <>پست الکترونیک <span className="text-rose-500 font-bold">*</span></>
+                          ) : (
+                            <>Email Address <span className="text-rose-500 font-bold">*</span></>
+                          )}
                         </label>
                         <div className="relative">
                           <Mail className="absolute start-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -903,7 +907,11 @@ export function LoginView() {
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
                           <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            {lang === "fa" ? "کد ۶ رقمی دریافتی از ایمیل *" : "6-Digit Recovery Code *"}
+                            {lang === "fa" ? (
+                              <>کد ۶ رقمی دریافتی از ایمیل <span className="text-rose-500 font-bold">*</span></>
+                            ) : (
+                              <>6-Digit Recovery Code <span className="text-rose-500 font-bold">*</span></>
+                            )}
                           </label>
                           {cooldown > 0 && (
                             <span className="text-[11px] text-blue-600 dark:text-blue-400 font-mono font-medium">
@@ -933,7 +941,11 @@ export function LoginView() {
 
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          {lang === "fa" ? "رمز عبور جدید *" : "New Password *"}
+                          {lang === "fa" ? (
+                            <>رمز عبور جدید <span className="text-rose-500 font-bold">*</span></>
+                          ) : (
+                            <>New Password <span className="text-rose-500 font-bold">*</span></>
+                          )}
                         </label>
                         <Input
                           required
@@ -1015,7 +1027,11 @@ export function LoginView() {
                     {mode === "register" && (
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          {lang === "fa" ? "نام و نام خانوادگی *" : "Full Name *"}
+                          {lang === "fa" ? (
+                            <>نام و نام خانوادگی <span className="text-rose-500 font-bold">*</span></>
+                          ) : (
+                            <>Full Name <span className="text-rose-500 font-bold">*</span></>
+                          )}
                         </label>
                         <div className="relative">
                           <UserIcon className="absolute start-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -1033,7 +1049,11 @@ export function LoginView() {
                     {/* Email (Always LTR) */}
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        {lang === "fa" ? "پست الکترونیک *" : "Email Address *"}
+                        {lang === "fa" ? (
+                          <>پست الکترونیک <span className="text-rose-500 font-bold">*</span></>
+                        ) : (
+                          <>Email Address <span className="text-rose-500 font-bold">*</span></>
+                        )}
                       </label>
                       <div className="relative flex gap-2">
                         <div className="relative flex-1">
@@ -1072,7 +1092,13 @@ export function LoginView() {
                     {mode === "register" && (
                       <div className="space-y-1 animate-in fade-in">
                         <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                          <span>{lang === "fa" ? "کد ۶ رقمی تأیید ایمیل *" : "6-Digit Email Verification Code *"}</span>
+                          <span>
+                            {lang === "fa" ? (
+                              <>کد ۶ رقمی تأیید ایمیل <span className="text-rose-500 font-bold">*</span></>
+                            ) : (
+                              <>6-Digit Email Verification Code <span className="text-rose-500 font-bold">*</span></>
+                            )}
+                          </span>
                           {codeSent && (
                             <span className="text-[11px] font-medium">
                               {cooldown > 0 ? (
@@ -1100,7 +1126,11 @@ export function LoginView() {
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          {lang === "fa" ? "رمز عبور *" : "Password *"}
+                          {lang === "fa" ? (
+                            <>رمز عبور <span className="text-rose-500 font-bold">*</span></>
+                          ) : (
+                            <>Password <span className="text-rose-500 font-bold">*</span></>
+                          )}
                         </label>
                         {mode === "login" && (
                           <button
@@ -1143,7 +1173,11 @@ export function LoginView() {
                     {mode === "register" && (
                       <div className="space-y-1 animate-in fade-in duration-150">
                         <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          {lang === "fa" ? "تکرار و تأیید رمز عبور *" : "Confirm Password *"}
+                          {lang === "fa" ? (
+                            <>تکرار و تأیید رمز عبور <span className="text-rose-500 font-bold">*</span></>
+                          ) : (
+                            <>Confirm Password <span className="text-rose-500 font-bold">*</span></>
+                          )}
                         </label>
                         <div className="relative">
                           <Lock className="absolute start-3 top-2.5 h-4 w-4 text-slate-400" />

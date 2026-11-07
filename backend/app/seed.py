@@ -10,9 +10,20 @@ def seed_database():
 
     # Check if already seeded
     cursor.execute("SELECT COUNT(*) FROM users")
-    if cursor.fetchone()[0] > 0:
-        conn.close()
+    already_seeded = cursor.fetchone()[0] > 0
+    conn.close()
+
+    try:
+        from app.seed_demo_data import seed as seed_demo
+        seed_demo()
+    except Exception as e:
+        print("[SEED DEMO NOTICE]", e)
+
+    if already_seeded:
         return
+
+    conn = get_db()
+    cursor = conn.cursor()
 
     now = datetime.utcnow()
     now_str = now.isoformat()

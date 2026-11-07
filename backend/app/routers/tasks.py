@@ -6,11 +6,13 @@ from datetime import datetime
 from app.database import get_db
 from app.schemas import TaskCreate, TaskUpdate, SubtaskCreate, SubtaskUpdate, CommentCreate, AttachmentCreate
 from app.routers.auth import get_current_user
+from app.email_service import send_task_assigned_email
 
 router = APIRouter(prefix="/api/tasks", tags=["Tasks"])
 
 @router.get("")
 def get_tasks(
+    workspace_id: Optional[str] = None,
     project_id: Optional[str] = None,
     assignee_id: Optional[str] = None,
     status: Optional[str] = None,
@@ -24,7 +26,8 @@ def get_tasks(
         SELECT t.*,
                u.full_name as assignee_name, u.avatar_url as assignee_avatar,
                r.full_name as reporter_name,
-               p.name as project_name, p.color as project_color
+               p.name as project_name, p.color as project_color,
+               p.workspace_id as workspace_id
         FROM tasks t
         LEFT JOIN users u ON t.assignee_id = u.id
         LEFT JOIN users r ON t.reporter_id = r.id
@@ -33,6 +36,9 @@ def get_tasks(
     """
     params = []
 
+    if workspace_id:
+        query += " AND p.workspace_id = ?"
+        params.append(workspace_id)
     if project_id:
         query += " AND t.project_id = ?"
         params.append(project_id)
@@ -45,6 +51,11 @@ def get_tasks(
     if search:
         query += " AND (t.title LIKE ? OR t.description LIKE ?)"
         params.extend([f"%{search}%", f"%{search}%"])
+
+    # If neither workspace nor project is specified, ensure user only sees tasks from their member workspaces or assigned to them
+    if not workspace_id and not project_id:
+        query += " AND (p.workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = ?) OR t.assignee_id = ?)"
+        params.extend([current_user["id"], current_user["id"]])
 
     query += " ORDER BY t.position ASC, t.created_at DESC"
     cursor.execute(query, params)
@@ -186,7 +197,7 @@ def create_task(task_data: TaskCreate, current_user: dict = Depends(get_current_
         tags_json, now_str, now_str
     ))
 
-    # Send notification if assigned
+    # Send notification & email if assigned
     if task_data.assignee_id and task_data.assignee_id != current_user["id"]:
         cursor.execute("""
             INSERT INTO notifications (id, user_id, title, message, link, type, created_at)
@@ -197,6 +208,21 @@ def create_task(task_data: TaskCreate, current_user: dict = Depends(get_current_
             f"تسک '{task_data.title}' توسط {current_user['full_name']} به شما ارجاع گردید.",
             f"/projects/{task_data.project_id}", now_str
         ))
+
+        cursor.execute("SELECT email, full_name FROM users WHERE id = ?", (task_data.assignee_id,))
+        assignee_row = cursor.fetchone()
+        cursor.execute("SELECT name FROM projects WHERE id = ?", (task_data.project_id,))
+        proj_row = cursor.fetchone()
+        proj_name = proj_row["name"] if proj_row else "پروژه"
+        if assignee_row:
+            send_task_assigned_email(
+                assignee_row["email"],
+                assignee_row["full_name"],
+                current_user.get("full_name", "همکار شما"),
+                task_data.title,
+                proj_name,
+                task_data.due_date or ""
+            )
 
     conn.commit()
     conn.close()

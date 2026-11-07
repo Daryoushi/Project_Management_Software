@@ -51,6 +51,30 @@ export function CreateProjectDialog() {
   const [userRepos, setUserRepos] = useState<any[]>([]);
   const [fetchingRepos, setFetchingRepos] = useState(false);
   const [githubUsernameInput, setGithubUsernameInput] = useState("");
+  const [githubConnected, setGithubConnected] = useState(false);
+  const [connectedUsername, setConnectedUsername] = useState("");
+
+  // Automatically fetch repositories if user has connected GitHub
+  React.useEffect(() => {
+    if (isCreateProjectOpen) {
+      api.getGithubStatus().then(async (st) => {
+        if (st.connected && st.github_username) {
+          setGithubConnected(true);
+          setConnectedUsername(st.github_username);
+          setGithubUsernameInput(st.github_username);
+          setFetchingRepos(true);
+          try {
+            const repos = await api.getGithubRepos({ username: st.github_username });
+            setUserRepos(repos);
+          } catch (e) {
+            console.error(e);
+          } finally {
+            setFetchingRepos(false);
+          }
+        }
+      }).catch(console.error);
+    }
+  }, [isCreateProjectOpen]);
 
   const colors = ["#6366F1", "#10B981", "#F59E0B", "#EC4899", "#8B5CF6", "#06B6D4", "#EF4444"];
 
@@ -205,7 +229,11 @@ export function CreateProjectDialog() {
             <form onSubmit={handleManualSubmit} className="space-y-4 text-xs">
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 dark:text-slate-300">
-                  {lang === "fa" ? "نام پروژه *" : "Project Name *"}
+                  {lang === "fa" ? (
+                    <>نام پروژه <span className="text-rose-500 font-bold">*</span></>
+                  ) : (
+                    <>Project Name <span className="text-rose-500 font-bold">*</span></>
+                  )}
                 </label>
                 <Input
                   autoFocus
@@ -270,22 +298,84 @@ export function CreateProjectDialog() {
           ) : (
             /* Tab 2: GitHub Repository Import */
             <form onSubmit={handleGithubImport} className="space-y-4 text-xs">
-              <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-900/40 text-[11px] text-blue-800 dark:text-blue-300 leading-relaxed space-y-1">
-                <p className="font-bold flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                  <span>{lang === "fa" ? "همگام‌سازی هوشمند با مخازن گیت‌هاب" : "Smart GitHub Repository Sync"}</span>
-                </p>
-                <p>
-                  {lang === "fa"
-                    ? "با اتصال مخزن گیت‌هاب، نام و توضیحات پروژه همراه با تمام ایشیوها (Issues) به صورت تسک‌های کانبان و فهرست در سامانه مدیریت پروژه ایجاد می‌گردند."
-                    : "Import repository details and automatically convert all GitHub issues into Kanban/List tasks."}
-                </p>
-              </div>
+              {/* Connected GitHub Status Badge */}
+              {githubConnected && connectedUsername ? (
+                <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 animate-in fade-in">
+                  <div className="flex items-center gap-2">
+                    <GithubIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    <span>
+                      {lang === "fa" ? "حساب متصل گیت‌هاب شما:" : "Connected GitHub account:"}{" "}
+                      <strong className="font-mono">{connectedUsername}</strong>
+                    </span>
+                  </div>
+                  <Badge variant="outline" className="border-emerald-500/40 text-emerald-600 dark:text-emerald-400 text-[10px]">
+                    {lang === "fa" ? "متصل" : "Connected"}
+                  </Badge>
+                </div>
+              ) : null}
+
+              {/* Repositories Quick Picker if loaded */}
+              {fetchingRepos ? (
+                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#12161f] flex items-center justify-center gap-2 text-muted-foreground animate-in fade-in">
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                  <span className="text-xs">{lang === "fa" ? "در حال دریافت خودکار مخازن گیت‌هاب شما..." : "Loading your GitHub repositories..."}</span>
+                </div>
+              ) : userRepos.length > 0 ? (
+                <div className="space-y-1.5 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-foreground">
+                      {lang === "fa" ? `مخازن گیت‌هاب شما (${userRepos.length} مخزن - روی مخزن مورد نظر کلیک کنید):` : `Your Repositories (${userRepos.length}):`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleFetchGithubRepos()}
+                      className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold"
+                    >
+                      <Loader2 className={`h-3 w-3 ${fetchingRepos ? "animate-spin" : ""}`} />
+                      <span>{lang === "fa" ? "بروزرسانی" : "Refresh"}</span>
+                    </button>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto space-y-1.5 border border-slate-200 dark:border-slate-800 rounded-xl p-2 bg-slate-50/50 dark:bg-[#12161f]">
+                    {userRepos.map((repo) => (
+                      <button
+                        key={repo.id}
+                        type="button"
+                        onClick={() => {
+                          setGithubRepoUrl(repo.full_name);
+                          if (!name) setName(repo.name);
+                        }}
+                        className={`w-full text-start p-2.5 rounded-lg transition-all flex items-center justify-between text-xs cursor-pointer ${
+                          githubRepoUrl === repo.full_name
+                            ? "bg-blue-600 text-white font-bold shadow-xs scale-[0.99]"
+                            : "hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-transparent hover:border-slate-300 dark:hover:border-slate-700"
+                        }`}
+                      >
+                        <div className="truncate min-w-0">
+                          <p className="truncate font-mono text-xs">{repo.full_name}</p>
+                          {repo.description && (
+                            <p className="text-[10px] opacity-80 truncate mt-0.5">{repo.description}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 ms-2 text-[10px] opacity-90">
+                          <span className="flex items-center gap-0.5">
+                            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                            {repo.stars}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               {/* Direct Repo Input */}
               <div className="space-y-1.5">
                 <label className="font-bold text-slate-700 dark:text-slate-300">
-                  {lang === "fa" ? "آدرس یا نام مخزن گیت‌هاب (owner/repo) *" : "GitHub Repository (owner/repo) *"}
+                  {lang === "fa" ? (
+                    <>آدرس یا نام مخزن گیت‌هاب (owner/repo) <span className="text-rose-500 font-bold">*</span></>
+                  ) : (
+                    <>GitHub Repository (owner/repo) <span className="text-rose-500 font-bold">*</span></>
+                  )}
                 </label>
                 <div className="relative">
                   <GitBranch className="absolute start-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -300,10 +390,10 @@ export function CreateProjectDialog() {
                 </div>
               </div>
 
-              {/* Quick fetch from username */}
+              {/* Quick fetch from username (if wanting to fetch a different user) */}
               <div className="space-y-1.5 pt-1">
                 <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                  <span>{lang === "fa" ? "یا جستجوی مخازن بر اساس نام کاربری:" : "Or browse by username:"}</span>
+                  <span>{lang === "fa" ? "یا جستجوی مخازن کاربر/سازمان دیگر:" : "Or search another username/org:"}</span>
                 </label>
                 <div className="flex gap-2">
                   <Input
@@ -328,45 +418,6 @@ export function CreateProjectDialog() {
                   </Button>
                 </div>
               </div>
-
-              {/* Repository Quick Selection List */}
-              {userRepos.length > 0 && (
-                <div className="space-y-1.5">
-                  <span className="text-[11px] text-muted-foreground font-semibold">
-                    {lang === "fa" ? "مخازن یافت شده (روی مخزن مورد نظر کلیک کنید):" : "Found Repositories:"}
-                  </span>
-                  <div className="max-h-36 overflow-y-auto space-y-1 border border-slate-200 dark:border-slate-800 rounded-xl p-1.5 bg-slate-50/50 dark:bg-[#12161f]">
-                    {userRepos.map((repo) => (
-                      <button
-                        key={repo.id}
-                        type="button"
-                        onClick={() => setGithubRepoUrl(repo.full_name)}
-                        className={`w-full text-start p-2 rounded-lg transition-colors flex items-center justify-between text-xs ${
-                          githubRepoUrl === repo.full_name
-                            ? "bg-blue-600 text-white font-bold"
-                            : "hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
-                        }`}
-                      >
-                        <div className="truncate min-w-0">
-                          <p className="truncate font-mono text-[11px]">{repo.full_name}</p>
-                          {repo.description && (
-                            <p className="text-[10px] opacity-80 truncate">{repo.description}</p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0 ms-2 text-[10px] opacity-90">
-                          <span className="flex items-center gap-0.5">
-                            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                            {repo.stars}
-                          </span>
-                          <Badge variant="outline" className="text-[9px] py-0 px-1 border-current">
-                            {repo.language}
-                          </Badge>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Checkbox: Import Issues */}
               <div className="flex items-center gap-2 pt-1">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useApp } from "@/lib/context";
 import { api } from "@/lib/api";
 import { formatRelativeDate, toPersianDigits } from "@/lib/jalali";
@@ -24,7 +24,9 @@ import {
   Check,
   Clock,
   Menu,
-  RefreshCw
+  RefreshCw,
+  UserPlus,
+  X
 } from "lucide-react";
 import { GithubIcon } from "@/components/github/GithubHubDialog";
 
@@ -50,11 +52,50 @@ export function Navbar() {
     setTheme,
     t,
     canEdit,
+    refreshWorkspacesAndProjects,
+    setCurrentWorkspace,
+    workspaces,
   } = useApp();
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [syncingGithub, setSyncingGithub] = useState(false);
   const [syncMessage, setSyncMessage] = useState("");
+  const [respondingInvite, setRespondingInvite] = useState<string | null>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  // Close notifications dropdown when clicked outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setIsNotifOpen(false);
+      }
+    }
+    if (isNotifOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isNotifOpen]);
+
+  const handleRespondInvitation = async (invitationId: string, action: "accept" | "reject", notifId: string) => {
+    setRespondingInvite(invitationId);
+    try {
+      const res = await api.respondInvitation(invitationId, action);
+      alert(res.message);
+      await api.markNotificationRead(notifId);
+      if (action === "accept" && res.workspace_id) {
+        await refreshWorkspacesAndProjects(res.workspace_id);
+      } else {
+        await refreshWorkspacesAndProjects();
+      }
+      await refreshTasks();
+    } catch (e: any) {
+      alert(e.message || "خطا در پاسخ به دعوت‌نامه");
+    } finally {
+      setRespondingInvite(null);
+    }
+  };
 
   const handleSyncProjectGithub = async () => {
     if (!currentProject?.id) return;
@@ -160,7 +201,7 @@ export function Navbar() {
           </button>
 
           {/* Notifications Dropdown */}
-          <div className="relative">
+          <div className="relative" ref={notifRef}>
             <button
               onClick={() => setIsNotifOpen(!isNotifOpen)}
               className="relative p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -184,20 +225,53 @@ export function Navbar() {
                     </button>
                   )}
                 </div>
-                <div className="divide-y max-h-64 overflow-y-auto pt-1">
-                  {notifications.map((n) => (
-                    <div key={n.id} className="py-2 px-1 text-xs space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-foreground">{n.title}</span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {formatRelativeDate(n.created_at, lang)}
-                        </span>
+                <div className="divide-y max-h-72 overflow-y-auto pt-1">
+                  {notifications.map((n) => {
+                    const isInvite = n.type === "workspace_invitation" && n.link?.startsWith("invitation:");
+                    const inviteId = isInvite ? n.link?.replace("invitation:", "") : null;
+
+                    return (
+                      <div key={n.id} className="py-2.5 px-1.5 text-xs space-y-1.5 hover:bg-muted/30 rounded-lg transition-colors">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-foreground flex items-center gap-1.5">
+                            {isInvite && <UserPlus className="h-3.5 w-3.5 text-blue-500" />}
+                            {n.title}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {formatRelativeDate(n.created_at, lang)}
+                          </span>
+                        </div>
+                        <p className="text-muted-foreground text-[11px] leading-relaxed">
+                          {n.message}
+                        </p>
+
+                        {/* Interactive Accept / Reject buttons for invitations */}
+                        {isInvite && inviteId && !n.is_read && (
+                          <div className="flex items-center gap-2 pt-1">
+                            <Button
+                              size="sm"
+                              disabled={respondingInvite === inviteId}
+                              onClick={() => handleRespondInvitation(inviteId, "accept", n.id)}
+                              className="h-7 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 rounded-lg gap-1"
+                            >
+                              <Check className="h-3 w-3" />
+                              <span>{lang === "fa" ? "پذیرش دعوت" : "Accept"}</span>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={respondingInvite === inviteId}
+                              onClick={() => handleRespondInvitation(inviteId, "reject", n.id)}
+                              className="h-7 text-xs border-rose-200 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 px-3 rounded-lg gap-1"
+                            >
+                              <X className="h-3 w-3" />
+                              <span>{lang === "fa" ? "رد" : "Decline"}</span>
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                      <p className="text-muted-foreground text-[11px] leading-relaxed">
-                        {n.message}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {notifications.length === 0 && (
                     <div className="py-6 text-center text-xs text-muted-foreground">
                       {lang === "fa" ? "اعلان جدیدی وجود ندارد" : "No notifications"}

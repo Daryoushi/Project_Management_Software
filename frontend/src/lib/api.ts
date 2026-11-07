@@ -302,6 +302,17 @@ export const api = {
       body: JSON.stringify(data),
     });
   },
+  updateWorkspace: async (workspaceId: string, data: { name: string; description?: string; color?: string }) => {
+    return api.request<{ message: string }>(`/workspaces/${workspaceId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+  deleteWorkspace: async (workspaceId: string) => {
+    return api.request<{ message: string }>(`/workspaces/${workspaceId}`, {
+      method: "DELETE",
+    });
+  },
   getWorkspaceMembers: async (workspaceId: string) => {
     return api.request<any[]>(`/workspaces/${workspaceId}/members`);
   },
@@ -313,6 +324,41 @@ export const api = {
   },
   removeWorkspaceMember: async (workspaceId: string, userId: string) => {
     return api.request<{ message: string }>(`/workspaces/${workspaceId}/members/${userId}`, {
+      method: "DELETE",
+    });
+  },
+  getPendingInvitations: async () => {
+    return api.request<{
+      id: string;
+      workspace_id: string;
+      workspace_name: string;
+      workspace_color: string;
+      inviter_name: string;
+      inviter_email: string;
+      role: string;
+      status: string;
+      created_at: string;
+    }[]>("/workspaces/invitations/pending");
+  },
+  respondInvitation: async (invitationId: string, action: "accept" | "reject") => {
+    return api.request<{ message: string; workspace_id?: string; status: string }>(`/workspaces/invitations/${invitationId}/respond`, {
+      method: "POST",
+      body: JSON.stringify({ action }),
+    });
+  },
+  getWorkspaceInvitations: async (workspaceId: string) => {
+    return api.request<{
+      id: string;
+      role: string;
+      status: string;
+      created_at: string;
+      email: string;
+      full_name: string;
+      avatar_url: string;
+    }[]>(`/workspaces/${workspaceId}/invitations`);
+  },
+  cancelWorkspaceInvitation: async (workspaceId: string, invitationId: string) => {
+    return api.request<{ message: string }>(`/workspaces/${workspaceId}/invitations/${invitationId}`, {
       method: "DELETE",
     });
   },
@@ -341,8 +387,9 @@ export const api = {
   },
 
   // Tasks
-  getTasks: async (params?: { project_id?: string; assignee_id?: string; status?: string; search?: string }) => {
+  getTasks: async (params?: { workspace_id?: string; project_id?: string; assignee_id?: string; status?: string; search?: string }) => {
     const searchParams = new URLSearchParams();
+    if (params?.workspace_id) searchParams.append("workspace_id", params.workspace_id);
     if (params?.project_id) searchParams.append("project_id", params.project_id);
     if (params?.assignee_id) searchParams.append("assignee_id", params.assignee_id);
     if (params?.status) searchParams.append("status", params.status);

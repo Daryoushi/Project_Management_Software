@@ -237,6 +237,21 @@ export function TaskDetailModal() {
                   handleSaveField({ due_date: val });
                 }}
               />
+              {dueDate && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const cleanDate = dueDate.replace(/-/g, "");
+                    const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${cleanDate}T090000Z/${cleanDate}T100000Z&details=${encodeURIComponent(description || "")}`;
+                    window.open(gcalUrl, "_blank");
+                  }}
+                  className="mt-1 flex items-center gap-1 text-[10.5px] text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+                  title="باز کردن در تقویم گوگل و تنظیم یادآور"
+                >
+                  <Calendar className="h-3 w-3 shrink-0" />
+                  <span>{lang === "fa" ? "افزودن به Google Calendar" : "Add to Google Calendar"}</span>
+                </button>
+              )}
             </div>
 
             {/* Status */}

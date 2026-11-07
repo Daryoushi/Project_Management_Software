@@ -19,13 +19,15 @@ import {
   MoveLeft,
   MoveRight,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  Pencil
 } from "lucide-react";
 
 export function BoardView() {
   const { tasks, currentProject, lang, t, setActiveTaskId, refreshTasks, canEdit, searchQuery } = useApp();
   const [addingColumn, setAddingColumn] = useState<string | null>(null);
   const [quickTitle, setQuickTitle] = useState("");
+  const [colLimits, setColLimits] = useState<Record<string, number>>({});
 
   const columns = [
     { id: "todo", title: t.todo, color: "#6366F1", section: "To do" },
@@ -105,66 +107,65 @@ export function BoardView() {
                   {lang === "fa" ? toPersianDigits(columnTasks.length) : columnTasks.length}
                 </span>
               </div>
-              {canEdit && (
-                <button
-                  onClick={() => {
-                    setAddingColumn(col.id);
-                    setQuickTitle("");
-                  }}
-                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              )}
             </div>
 
             {/* Task Cards Column Body */}
             <div className="space-y-3 py-3 overflow-y-auto min-h-[120px]">
-              {columnTasks.map((task) => {
-                const isOverdue = task.due_date && task.due_date < new Date().toISOString().split("T")[0] && task.status !== "done";
-
+              {(() => {
+                const limit = colLimits[col.id] || 10;
+                const visibleTasks = columnTasks.slice(0, limit);
                 return (
-                  <Card
-                    key={task.id}
-                    onClick={() => setActiveTaskId(task.id)}
-                    className="group border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer bg-card rounded-xl overflow-hidden"
-                  >
-                    <CardContent className="p-4 space-y-3">
-                      {/* Tags & Priority */}
-                      <div className="flex items-center justify-between gap-1 flex-wrap">
-                        {task.priority && (
-                          <Badge
-                            variant={
-                              task.priority === "urgent" || task.priority === "high"
-                                ? "destructive"
-                                : task.priority === "medium"
-                                ? "warning"
-                                : "secondary"
-                            }
-                            className="text-[10px]"
-                          >
-                            {t[task.priority]}
-                          </Badge>
-                        )}
-                        {task.tags && task.tags.length > 0 && (
-                          <div className="flex gap-1">
-                            {task.tags.map((tag, i) => (
-                              <span
-                                key={i}
-                                className="px-1.5 py-0.2 rounded text-[10px] font-medium"
-                                style={{ backgroundColor: `${tag.color}15`, color: tag.color }}
-                              >
-                                {tag.name}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                  <>
+                    {visibleTasks.map((task) => {
+                      const isOverdue = task.due_date && task.due_date < new Date().toISOString().split("T")[0] && task.status !== "done";
 
-                      {/* Title */}
-                      <h4 className="text-sm font-semibold line-clamp-2 group-hover:text-primary transition-colors">
-                        {task.title}
-                      </h4>
+                      return (
+                        <Card
+                          key={task.id}
+                          onClick={() => setActiveTaskId(task.id)}
+                          className="group border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer bg-card rounded-xl overflow-hidden"
+                        >
+                          <CardContent className="p-4 space-y-3">
+                            {/* Tags & Priority */}
+                            <div className="flex items-center justify-between gap-1 flex-wrap">
+                              {task.priority && (
+                                <Badge
+                                  variant={
+                                    task.priority === "urgent" || task.priority === "high"
+                                      ? "destructive"
+                                      : task.priority === "medium"
+                                      ? "warning"
+                                      : "secondary"
+                                  }
+                                  className="text-[10px]"
+                                >
+                                  {t[task.priority]}
+                                </Badge>
+                              )}
+                              {task.tags && task.tags.length > 0 && (
+                                <div className="flex gap-1">
+                                  {task.tags.map((tag, i) => (
+                                    <span
+                                      key={i}
+                                      className="px-1.5 py-0.2 rounded text-[10px] font-medium"
+                                      style={{ backgroundColor: `${tag.color}15`, color: tag.color }}
+                                    >
+                                      {tag.name}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Title & Edit Pencil */}
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="text-sm font-semibold line-clamp-2 group-hover:text-primary transition-colors flex-1">
+                                {task.title}
+                              </h4>
+                              <span className="p-1 rounded-md text-muted-foreground/60 group-hover:text-primary group-hover:bg-primary/10 transition-all opacity-0 group-hover:opacity-100 shrink-0" title={lang === "fa" ? "ویرایش وظیفه" : "Edit task"}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </span>
+                            </div>
 
                       {/* Subtasks Progress */}
                       {(task.subtasks_count || 0) > 0 && (
@@ -245,8 +246,24 @@ export function BoardView() {
                       </div>
                     </CardContent>
                   </Card>
+                      );
+                    })}
+
+                    {columnTasks.length > limit && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setColLimits((prev) => ({ ...prev, [col.id]: limit + 10 }))}
+                        className="w-full text-xs text-primary hover:text-primary/90 h-8 font-semibold bg-muted/40 hover:bg-muted rounded-xl"
+                      >
+                        {lang === "fa"
+                          ? `نمایش وظایف بیشتر (${toPersianDigits(columnTasks.length - limit)} مورد دیگر)...`
+                          : `Load More (${columnTasks.length - limit} more)...`}
+                      </Button>
+                    )}
+                  </>
                 );
-              })}
+              })()}
 
               {columnTasks.length === 0 && (
                 <div className="py-8 text-center text-xs text-muted-foreground border border-dashed rounded-xl">

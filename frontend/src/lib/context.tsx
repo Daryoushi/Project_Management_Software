@@ -42,7 +42,7 @@ interface AppContextType {
   notifications: NotificationItem[];
   unreadCount: number;
   refreshTasks: () => Promise<void>;
-  refreshWorkspacesAndProjects: () => Promise<void>;
+  refreshWorkspacesAndProjects: (targetWsId?: string) => Promise<void>;
   authLoading: boolean;
   userRole: string;
   canEdit: boolean;
@@ -151,19 +151,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     checkSession();
   }, []);
 
-  const refreshWorkspacesAndProjects = async () => {
+  const refreshWorkspacesAndProjects = async (targetWsId?: string) => {
     try {
       const wsList = await api.getWorkspaces();
       setWorkspaces(wsList);
-      const activeWs = wsList[0] || null;
-      setCurrentWorkspace(activeWs);
+      
+      const chosenWs = targetWsId
+        ? wsList.find((w) => w.id === targetWsId) || wsList[0] || null
+        : (currentWorkspace ? wsList.find((w) => w.id === currentWorkspace.id) || wsList[0] : wsList[0]) || null;
+      
+      setCurrentWorkspace(chosenWs);
 
-      if (activeWs) {
-        const projList = await api.getProjects(activeWs.id);
+      if (chosenWs) {
+        const projList = await api.getProjects(chosenWs.id);
         setProjects(projList);
-        if (projList.length > 0 && !currentProject) {
-          setCurrentProject(projList[0]);
-        }
+        const curInList = projList.find((p) => p.id === currentProject?.id);
+        setCurrentProject(curInList || (projList.length > 0 ? projList[0] : null));
+      } else {
+        setProjects([]);
+        setCurrentProject(null);
       }
 
       const notifs = await api.getNotifications().catch(() => []);
@@ -176,7 +182,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const refreshTasks = async () => {
     try {
       if (currentProject) {
-        const taskList = await api.getTasks({ project_id: currentProject.id });
+        const taskList = await api.getTasks({
+          project_id: currentProject.id,
+          workspace_id: currentWorkspace?.id,
+        });
+        setTasks(taskList);
+      } else if (currentWorkspace) {
+        const taskList = await api.getTasks({
+          workspace_id: currentWorkspace.id,
+        });
         setTasks(taskList);
       } else {
         const taskList = await api.getTasks();
@@ -187,11 +201,49 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Re-load projects and tasks whenever workspace changes
+  useEffect(() => {
+    if (!currentWorkspace?.id) return;
+    let cancelled = false;
+
+    const loadWorkspaceScope = async () => {
+      try {
+        const projList = await api.getProjects(currentWorkspace.id);
+        if (cancelled) return;
+        setProjects(projList);
+
+        const curInList = projList.find((p) => p.id === currentProject?.id);
+        const activeProj = curInList || (projList.length > 0 ? projList[0] : null);
+        setCurrentProject(activeProj);
+
+        if (activeProj) {
+          const taskList = await api.getTasks({
+            project_id: activeProj.id,
+            workspace_id: currentWorkspace.id,
+          });
+          if (!cancelled) setTasks(taskList);
+        } else {
+          const taskList = await api.getTasks({
+            workspace_id: currentWorkspace.id,
+          });
+          if (!cancelled) setTasks(taskList);
+        }
+      } catch (e) {
+        console.error("Error updating workspace scope", e);
+      }
+    };
+
+    loadWorkspaceScope();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentWorkspace?.id]);
+
   useEffect(() => {
     if (currentProject) {
       refreshTasks();
     }
-  }, [currentProject]);
+  }, [currentProject?.id]);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
   const userRole = currentWorkspace?.user_role || user?.global_role || "member";

@@ -86,8 +86,8 @@ export function UserProfileModal() {
       setCooldown(res.cooldown || 120);
       setSuccessMsg(
         lang === "fa"
-          ? "کد تأیید به ایمیل جدید ارسال شد (اگر کد را دریافت نکردید، پوشه spam/هرزنامه ایمیل خود را بررسی کنید)."
-          : "Verification code sent to new email. (If you didn't receive the code, check your spam folder)"
+          ? "کد تأیید به ایمیل جدید ارسال شد."
+          : "Verification code sent to new email."
       );
     } catch (err: any) {
       setErrorMsg(err.message || (lang === "fa" ? "خطا در ارسال کد تأیید" : "Failed to send code"));
@@ -266,11 +266,6 @@ export function UserProfileModal() {
                   className="h-9 text-xs text-center font-mono tracking-widest text-base font-bold bg-background"
                   dir="ltr"
                 />
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  {lang === "fa"
-                    ? "(اگر کد را دریافت نکردید، پوشه spam/هرزنامه ایمیل خود را بررسی کنید)"
-                    : "(If you did not receive the code, check your spam folder)"}
-                </p>
               </div>
             )}
 

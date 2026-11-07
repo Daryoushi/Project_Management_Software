@@ -18,7 +18,8 @@ import {
   AlertCircle,
   Clock,
   Sparkles,
-  MoreHorizontal
+  MoreHorizontal,
+  Pencil
 } from "lucide-react";
 
 export function ListView() {
@@ -26,6 +27,7 @@ export function ListView() {
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [addingTaskSection, setAddingTaskSection] = useState<string | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [sectionLimits, setSectionLimits] = useState<Record<string, number>>({});
 
   const toggleSection = (section: string) => {
     setCollapsedSections((prev) => ({ ...prev, [section]: !prev[section] }));
@@ -141,7 +143,12 @@ export function ListView() {
             {/* Task Rows */}
             {!isCollapsed && (
               <div className="divide-y rounded-xl border bg-card shadow-sm overflow-hidden">
-                {sectionTasks.map((task) => {
+                {(() => {
+                  const limit = sectionLimits[section] || 10;
+                  const visibleTasks = sectionTasks.slice(0, limit);
+                  return (
+                    <>
+                      {visibleTasks.map((task) => {
                   const isDone = task.status === "done";
                   return (
                     <div
@@ -248,10 +255,41 @@ export function ListView() {
                           <option value="in_progress">{t.in_progress}</option>
                           <option value="done">{t.done}</option>
                         </select>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveTaskId(task.id);
+                          }}
+                          className="p-1 rounded-md text-muted-foreground/60 hover:text-primary hover:bg-muted transition-colors shrink-0"
+                          title={lang === "fa" ? "ویرایش وظیفه" : "Edit task"}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </div>
                   );
                 })}
+
+                {sectionTasks.length > limit && (
+                  <div className="p-2 text-center bg-muted/20">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSectionLimits((prev) => ({ ...prev, [section]: limit + 10 }))}
+                      className="w-full text-xs text-primary hover:text-primary/90 h-8 font-semibold bg-muted/40 hover:bg-muted rounded-xl"
+                    >
+                      {lang === "fa"
+                        ? `نمایش وظایف بیشتر (${toPersianDigits(sectionTasks.length - limit)} مورد دیگر)...`
+                        : `Load More (${sectionTasks.length - limit} more)...`}
+                    </Button>
+                  </div>
+                )}
+              </>
+            );
+          })()}
 
                 {/* Inline add task input or button */}
                 {canEdit && (

@@ -74,7 +74,9 @@ export function CreateTaskDialog() {
         <form onSubmit={handleSubmit} className="space-y-4 pt-2 text-xs">
           {/* Title */}
           <div className="space-y-1">
-            <label className="font-bold text-muted-foreground">{t.taskTitle} *</label>
+            <label className="font-bold text-muted-foreground">
+              {t.taskTitle} <span className="text-rose-500 font-bold ms-0.5">*</span>
+            </label>
             <Input
               autoFocus
               required

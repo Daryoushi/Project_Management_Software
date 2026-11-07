@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useApp } from "@/lib/context";
 import { api, Project } from "@/lib/api";
+import { toPersianDigits } from "@/lib/jalali";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,6 +76,7 @@ export function GithubHubDialog() {
   const [loadingRepos, setLoadingRepos] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
   const [visibilityFilter, setVisibilityFilter] = useState<"all" | "public" | "private">("all");
+  const [visibleReposCount, setVisibleReposCount] = useState(10);
 
   // Actions status
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
@@ -445,16 +447,17 @@ export function GithubHubDialog() {
                   )}
                 </div>
               ) : (
-                filteredRepos.map((repo) => {
-                  const linkedProj = getLinkedProject(repo.html_url);
-                  const isImporting = loadingAction === `import_${repo.id}`;
-                  const isSyncing = linkedProj && loadingAction === `sync_${linkedProj.id}`;
+                <>
+                  {filteredRepos.slice(0, visibleReposCount).map((repo) => {
+                    const linkedProj = getLinkedProject(repo.html_url);
+                    const isImporting = loadingAction === `import_${repo.id}`;
+                    const isSyncing = linkedProj && loadingAction === `sync_${linkedProj.id}`;
 
-                  return (
-                    <div
-                      key={repo.id}
-                      className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#181e2a] hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group shadow-2xs"
-                    >
+                    return (
+                      <div
+                        key={repo.id}
+                        className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#181e2a] hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group shadow-2xs"
+                      >
                       {/* Repo Info */}
                       <div className="min-w-0 flex-1 space-y-1.5">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -556,7 +559,24 @@ export function GithubHubDialog() {
                       </div>
                     </div>
                   );
-                })
+                })}
+
+                  {filteredRepos.length > visibleReposCount && (
+                    <div className="pt-2 text-center">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setVisibleReposCount((prev) => prev + 10)}
+                        className="w-full text-xs text-primary hover:text-primary/90 h-9 font-semibold bg-muted/40 hover:bg-muted rounded-xl"
+                      >
+                        {lang === "fa"
+                          ? `نمایش مخازن بیشتر (${toPersianDigits(filteredRepos.length - visibleReposCount)} مورد دیگر)...`
+                          : `Load More Repositories (${filteredRepos.length - visibleReposCount} more)...`}
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -675,7 +695,7 @@ export function GithubHubDialog() {
                   <form onSubmit={handleConnectToken} className="space-y-3">
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        توکن دسترسی گیت‌هاب (Personal Access Token) *
+                        توکن دسترسی گیت‌هاب (Personal Access Token) <span className="text-rose-500 font-bold">*</span>
                       </label>
                       <Input
                         required
@@ -715,7 +735,7 @@ export function GithubHubDialog() {
                   <form onSubmit={handleFetchPublicUser} className="space-y-3">
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        نام کاربری یا سازمان گیت‌هاب *
+                        نام کاربری یا سازمان گیت‌هاب <span className="text-rose-500 font-bold">*</span>
                       </label>
                       <Input
                         required
@@ -800,7 +820,7 @@ export function GithubHubDialog() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          شناسه کلاینت (Client ID) *
+                          شناسه کلاینت (Client ID) <span className="text-rose-500 font-bold">*</span>
                         </label>
                         <Input
                           required
@@ -814,7 +834,7 @@ export function GithubHubDialog() {
 
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          رمز کلاینت (Client Secret) *
+                          رمز کلاینت (Client Secret) <span className="text-rose-500 font-bold">*</span>
                         </label>
                         <Input
                           required

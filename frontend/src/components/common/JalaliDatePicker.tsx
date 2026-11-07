@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   gregorianToJalali,
   jalaliToGregorian,
@@ -33,20 +34,64 @@ export function JalaliDatePicker({
   className = "",
 }: JalaliDatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
 
-  // Close when clicked outside
+  const containerRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Update floating popover position relative to viewport
+  const updatePosition = () => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const popoverWidth = 288; // w-72 = 18rem = 288px
+    const popoverHeight = 310;
+
+    let top = rect.bottom + 6;
+    // If popover overflows viewport bottom, position above
+    if (top + popoverHeight > window.innerHeight && rect.top > popoverHeight + 6) {
+      top = rect.top - popoverHeight - 6;
+    }
+
+    // Align horizontally with container or clamp inside screen
+    let left = rect.left;
+    if (left + popoverWidth > window.innerWidth - 16) {
+      left = Math.max(16, window.innerWidth - popoverWidth - 16);
+    }
+    if (left < 16) left = 16;
+
+    setPopoverPos({ top, left });
+  };
+
+  // Close when clicked outside & sync position on scroll / resize
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        popoverRef.current &&
+        !popoverRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     }
+
     if (isOpen) {
+      updatePosition();
       document.addEventListener("mousedown", handleClickOutside);
+      window.addEventListener("scroll", updatePosition, true);
+      window.addEventListener("resize", updatePosition);
     }
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
     };
   }, [isOpen]);
 
@@ -182,9 +227,18 @@ export function JalaliDatePicker({
         )}
       </div>
 
-      {/* Jalali Calendar Popover Dropdown */}
-      {isOpen && (
-        <div className="absolute top-11 start-0 z-50 w-72 rounded-xl border bg-card p-3 shadow-2xl animate-in fade-in zoom-in-95">
+      {/* Jalali Calendar Popover Dropdown rendered via React Portal into document.body */}
+      {isOpen && mounted && popoverPos && typeof document !== "undefined" && createPortal(
+        <div
+          ref={popoverRef}
+          style={{
+            position: "fixed",
+            top: `${popoverPos.top}px`,
+            left: `${popoverPos.left}px`,
+            zIndex: 99999,
+          }}
+          className="w-72 rounded-xl border bg-card p-3 shadow-2xl animate-in fade-in zoom-in-95 backdrop-blur-md"
+        >
           {/* Calendar Header with Month & Year navigation */}
           <div className="flex items-center justify-between pb-2 border-b">
             <button
@@ -281,7 +335,8 @@ export function JalaliDatePicker({
               {lang === "fa" ? "بستن" : "Close"}
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

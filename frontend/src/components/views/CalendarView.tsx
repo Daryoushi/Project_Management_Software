@@ -12,6 +12,7 @@ import {
   PERSIAN_WEEK_DAYS,
   ENGLISH_WEEK_DAYS,
   toPersianDigits,
+  getJalaliOccasion,
 } from "@/lib/jalali";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon } from "lucide-react";
@@ -199,11 +200,12 @@ export function CalendarView() {
           }
 
           const dayTasks = tasksByDay[dayNum] || [];
+          const occasion = lang === "fa" ? getJalaliOccasion(currentJMonth, dayNum) : null;
 
           return (
             <div
               key={dayNum}
-              className={`min-h-[70px] sm:min-h-[110px] p-2 rounded-xl border transition-all flex flex-col justify-between ${
+              className={`min-h-[85px] sm:min-h-[120px] p-2 rounded-xl border transition-all flex flex-col justify-between ${
                 isToday
                   ? "bg-primary/5 border-primary shadow-xs ring-1 ring-primary/40"
                   : isHoliday
@@ -211,23 +213,34 @@ export function CalendarView() {
                   : "bg-card hover:border-primary/40 hover:bg-muted/20"
               }`}
             >
-              {/* Day Header Number */}
-              <div className="flex items-center justify-between">
-                <span
-                  className={`text-xs font-bold h-6 w-6 rounded-full flex items-center justify-center ${
-                    isToday
-                      ? "bg-primary text-primary-foreground"
-                      : isHoliday
-                      ? "text-rose-600 dark:text-rose-400 font-extrabold"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {lang === "fa" ? toPersianDigits(dayNum) : dayNum}
-                </span>
-                {dayTasks.length > 0 && (
-                  <span className="text-[10px] text-muted-foreground font-medium">
-                    {lang === "fa" ? `${toPersianDigits(dayTasks.length)} تسک` : `${dayTasks.length} tasks`}
+              {/* Day Header Number & Occasion */}
+              <div>
+                <div className="flex items-center justify-between">
+                  <span
+                    className={`text-xs font-bold h-6 w-6 rounded-full flex items-center justify-center ${
+                      isToday
+                        ? "bg-primary text-primary-foreground"
+                        : isHoliday
+                        ? "text-rose-600 dark:text-rose-400 font-extrabold"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {lang === "fa" ? toPersianDigits(dayNum) : dayNum}
                   </span>
+                  {dayTasks.length > 0 && (
+                    <span className="text-[10px] text-muted-foreground font-medium">
+                      {lang === "fa" ? `${toPersianDigits(dayTasks.length)} تسک` : `${dayTasks.length} tasks`}
+                    </span>
+                  )}
+                </div>
+
+                {occasion && (
+                  <div
+                    className="mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold truncate bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
+                    title={occasion}
+                  >
+                    {occasion}
+                  </div>
                 )}
               </div>
 

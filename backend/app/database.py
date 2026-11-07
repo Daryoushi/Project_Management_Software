@@ -165,6 +165,21 @@ def init_db():
         created_at TEXT NOT NULL,
         FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS workspace_invitations (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL,
+        inviter_id TEXT NOT NULL,
+        invitee_id TEXT NOT NULL,
+        invitee_email TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'member',
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
+        FOREIGN KEY (inviter_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (invitee_id) REFERENCES users(id) ON DELETE CASCADE
+    );
     """)
 
     # Safe migrations for GitHub integration

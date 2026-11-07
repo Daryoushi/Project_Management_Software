@@ -48,6 +48,7 @@ yarn-error.log*
 # Audio and temporary scratch files
 audio_chunks/
 *.mp3
+*.tsbuildinfo
 *.wav
 *.woff2
 create_rubric_document.py

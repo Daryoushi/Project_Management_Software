@@ -8,6 +8,8 @@ interface DialogProps {
   children: React.ReactNode;
 }
 
+const DialogContext = React.createContext<{ onClose?: () => void }>({});
+
 export function Dialog({ open, onOpenChange, children }: DialogProps) {
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -28,24 +30,26 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
-      onClick={() => onOpenChange(false)}
-    >
+    <DialogContext.Provider value={{ onClose: () => onOpenChange(false) }}>
       <div
-        className="fixed inset-0 bg-background/80 backdrop-blur-sm transition-opacity animate-in fade-in"
-      />
-      <div
-        className="relative z-50 w-full max-h-[90vh] overflow-y-auto"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            onOpenChange(false);
-          }
-        }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+        onClick={() => onOpenChange(false)}
       >
-        {children}
+        <div
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm transition-opacity animate-in fade-in"
+        />
+        <div
+          className="relative z-50 w-full max-h-[90vh] overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              onOpenChange(false);
+            }
+          }}
+        >
+          {children}
+        </div>
       </div>
-    </div>
+    </DialogContext.Provider>
   );
 }
 
@@ -58,15 +62,33 @@ export function DialogContent({
   className?: string;
   onClose?: () => void;
 }) {
+  const ctx = React.useContext(DialogContext);
+  const handleClose = onClose || ctx.onClose;
+
   return (
     <div
       className={cn(
         "relative mx-auto w-full max-w-lg rounded-2xl border bg-card p-6 shadow-2xl transition-all duration-200 animate-in zoom-in-95 max-h-[88vh] overflow-y-auto",
         className
       )}
+      style={{ direction: "ltr" }}
       onClick={(e) => e.stopPropagation()}
     >
-      {children}
+      {/* Top left close cross button */}
+      {handleClose && (
+        <button
+          type="button"
+          onClick={handleClose}
+          style={{ left: "16px", right: "auto", top: "16px" }}
+          className="absolute top-4 left-4 z-50 rounded-xl p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
+          title="بستن پنجره (Esc)"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+      <div style={{ direction: "rtl", textAlign: "start" }} className="w-full">
+        {children}
+      </div>
     </div>
   );
 }
