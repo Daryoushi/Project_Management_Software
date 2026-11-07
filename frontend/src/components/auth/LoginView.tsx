@@ -336,57 +336,58 @@ export function LoginView() {
     return () => clearInterval(interval);
   }, [GOOGLE_CLIENT_ID, theme]);
 
-  // Direct email login modal state
-  const [showDirectModal, setShowDirectModal] = useState(false);
-  const [directEmail, setDirectEmail] = useState("");
-
-  // Direct login with email (Google or any work email):
-  // 1. If email exists in database -> Logs in immediately!
-  // 2. If email is new -> Prompts for full name, creates account, logs in immediately!
-  const handleDirectAuth = async (inputEmail: string) => {
-    const cleanEmail = inputEmail.trim().toLowerCase();
-    if (!cleanEmail || !cleanEmail.includes("@")) {
-      setError(lang === "fa" ? "لطفاً نشانی ایمیل معتبر وارد فرمایید." : "Please enter a valid email address.");
-      return;
-    }
-    setLoading(true);
-    setError("");
-    setInfoMsg("");
-
-    try {
-      const res = await api.googleAuth({ email: cleanEmail });
-      if (res.needs_name) {
-        setShowDirectModal(false);
-        setGoogleNewUserData({
-          email: cleanEmail,
-          suggested_name: res.suggested_name || "",
-          avatar_url: res.avatar_url || "",
-          credential: "",
-        });
-        setGoogleFullName(res.suggested_name || "");
-        return;
-      }
-
-      if (res.access_token && res.user) {
-        setShowDirectModal(false);
-        api.setToken(res.access_token);
-        api.setStoredUser(res.user);
-        setUser(res.user);
-        await refreshWorkspacesAndProjects();
-      }
-    } catch (err: any) {
-      setError(err.message || (lang === "fa" ? "خطا در ورود به حساب کاربری" : "Sign-in error"));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Google Sign-In Trigger (accessible to all users without Google Cloud origin block)
+  // Official Google OAuth Trigger (Opens official Google Account Chooser popup or redirects)
   const handleGoogleButtonClick = () => {
     setError("");
     setInfoMsg("");
-    setDirectEmail("");
-    setShowDirectModal(true);
+
+    // 1. Try Google Identity Services OAuth2 Token Client (Opens official Google popup)
+    if ((window as any).google?.accounts?.oauth2) {
+      try {
+        const tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: "email profile openid",
+          prompt: "select_account",
+          callback: async (tokenResponse: any) => {
+            if (tokenResponse?.error) {
+              if (tokenResponse.error !== "popup_closed_by_user") {
+                setError(lang === "fa" ? "خطا در ارتباط با حساب گوگل: " + tokenResponse.error : "Google sign-in error");
+              }
+              return;
+            }
+            if (tokenResponse?.access_token) {
+              setLoading(true);
+              setError("");
+              try {
+                const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                });
+                const profile = await userInfoRes.json();
+                const res = await api.googleAuth({
+                  email: profile.email,
+                  full_name: profile.name,
+                  avatar_url: profile.picture,
+                });
+                await processGoogleAuthResult(res);
+              } catch (err: any) {
+                setError(err.message || (lang === "fa" ? "خطا در ورود با گوگل" : "Google authentication error"));
+              } finally {
+                setLoading(false);
+              }
+            }
+          },
+        });
+        tokenClient.requestAccessToken({ prompt: "select_account" });
+        return;
+      } catch (e) {
+        console.warn("[GIS OAuth error, falling back to redirect]", e);
+      }
+    }
+
+    // 2. Direct Redirect to Official Google Accounts authorization page
+    const redirectUri = getOAuthRedirectUri();
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token%20id_token&scope=openid%20email%20profile&nonce=${Date.now()}&prompt=select_account`;
+    window.location.href = googleAuthUrl;
   };
 
   // GitHub OAuth States
@@ -1383,95 +1384,7 @@ export function LoginView() {
         </div>
       )}
 
-      {/* Direct Login with Email / Google Modal */}
-      {showDirectModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="relative bg-white dark:bg-[#181e2a] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in-95">
-            <button
-              type="button"
-              title="بستن پنجره (Esc)"
-              onClick={() => {
-                setShowDirectModal(false);
-                setError("");
-              }}
-              className="absolute left-4 top-4 p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 flex items-center justify-center shrink-0">
-                <GoogleIcon className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
-                  {lang === "fa" ? "ورود به حساب با گوگل" : "Sign in with Google"}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {lang === "fa"
-                    ? "نشانی جیمیل یا ایمیل کاری خود را وارد نمایید؛ در صورت داشتن حساب فوراً وارد می‌شوید و در غیر این صورت حساب جدید برای شما ایجاد می‌شود."
-                    : "Enter your Google email to sign in directly or create a new account."}
-                </p>
-              </div>
-            </div>
 
-            {error && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleDirectAuth(directEmail);
-              }}
-              className="space-y-4"
-            >
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  {lang === "fa" ? "نشانی حساب گوگل (جیمیل) *" : "Google Account (Gmail) *"}
-                </label>
-                <div className="relative">
-                  <Mail className="absolute start-3 top-2.5 h-4 w-4 text-slate-400" />
-                  <Input
-                    required
-                    type="email"
-                    dir="ltr"
-                    autoFocus
-                    placeholder={lang === "fa" ? "ali.rezaei@example.com" : "name@example.com"}
-                    value={directEmail}
-                    onChange={(e) => setDirectEmail(e.target.value)}
-                    className="ps-9 h-10 text-xs text-left bg-slate-50 dark:bg-[#141822] border-slate-200 dark:border-slate-700 rounded-xl font-sans"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setShowDirectModal(false);
-                    setError("");
-                  }}
-                  className="flex-1 h-10 text-xs rounded-xl"
-                >
-                  {lang === "fa" ? "انصراف" : "Cancel"}
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={loading || !directEmail.trim()}
-                  className="flex-2 h-10 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs gap-1.5 rounded-xl shadow-md transition-all cursor-pointer"
-                >
-                  <span>{loading ? (lang === "fa" ? "در حال بررسی..." : "Checking...") : (lang === "fa" ? "ورود به سامانه" : "Continue")}</span>
-                  <ArrowIcon className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Google New User Name Completion Modal */}
       {googleNewUserData && (
