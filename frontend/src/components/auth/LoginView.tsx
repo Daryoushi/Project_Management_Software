@@ -245,7 +245,7 @@ export function LoginView() {
     }
   }, []);
 
-  const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "27962575886-mjv71o6a67vn8i8olj8ivv9qrs3j08js.apps.googleusercontent.com";
+  const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "845024940012-uph157c16paab4m1ctsvcer94ai28sue.apps.googleusercontent.com";
 
   // Process Google auth response
   const processGoogleAuthResult = async (res: any) => {
