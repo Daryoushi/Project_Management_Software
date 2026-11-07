@@ -593,7 +593,7 @@ def send_email_change_code(data: dict, current_user: dict = Depends(get_current_
     sent = send_real_email(new_email, "کد تأیید تغییر ایمیل حساب کاربری", code, purpose="تأیید ایمیل جدید")
     print(f"[EMAIL CHANGE] Code for {new_email}: {code} (sent: {sent})")
     if sent:
-        return {"message": f"کد تأیید به آدرس {new_email} ارسال شد.", "cooldown": 120}
+        return {"message": f"کد تأیید به آدرس {new_email} ارسال شد (اگر کد را دریافت نکردید، پوشه spam/هرزنامه ایمیل خود را بررسی کنید).", "cooldown": 120}
     else:
         return {
             "message": f"کد تأیید شما: {code}",
@@ -652,6 +652,35 @@ def update_profile(data: dict, current_user: dict = Depends(get_current_user)):
     updated = cursor.fetchone()
     conn.close()
     return dict(updated)
+
+@router.delete("/account")
+def delete_account(current_user: dict = Depends(get_current_user)):
+    user_id = current_user["id"]
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM notifications WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM comments WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM task_attachments WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM workspace_members WHERE user_id = ?", (user_id,))
+    cursor.execute("""
+        DELETE FROM tasks WHERE project_id IN (
+            SELECT p.id FROM projects p
+            JOIN workspaces w ON p.workspace_id = w.id
+            WHERE w.owner_id = ?
+        )
+    """, (user_id,))
+    cursor.execute("""
+        DELETE FROM projects WHERE workspace_id IN (
+            SELECT id FROM workspaces WHERE owner_id = ?
+        )
+    """, (user_id,))
+    cursor.execute("DELETE FROM workspaces WHERE owner_id = ?", (user_id,))
+    cursor.execute("UPDATE tasks SET assignee_id = NULL WHERE assignee_id = ?", (user_id,))
+    cursor.execute("UPDATE tasks SET reporter_id = NULL WHERE reporter_id = ?", (user_id,))
+    cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    return {"message": "حساب کاربری و تمامی داده‌های مربوطه با موفقیت حذف گردید."}
 
 # In-memory storage for verification codes and password reset codes
 verification_codes: dict = {}

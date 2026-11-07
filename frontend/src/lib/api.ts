@@ -280,6 +280,11 @@ export const api = {
       body: JSON.stringify(data),
     });
   },
+  deleteAccount: async () => {
+    return api.request<{ message: string }>("/auth/account", {
+      method: "DELETE",
+    });
+  },
   getMe: async () => {
     return api.request<User>("/auth/me");
   },

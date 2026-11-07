@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { User, Shield, Moon, Sun, Globe, LogOut, Camera, Check, AlertCircle, Save } from "lucide-react";
+import { User, Shield, Moon, Sun, Globe, LogOut, Camera, Check, AlertCircle, Save, Trash2 } from "lucide-react";
 
 export function UserProfileModal() {
   const {
@@ -59,6 +59,8 @@ export function UserProfileModal() {
   const [codeSent, setCodeSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [sendingCode, setSendingCode] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -82,11 +84,28 @@ export function UserProfileModal() {
       const res = await api.sendEmailChangeCode(email.trim().toLowerCase());
       setCodeSent(true);
       setCooldown(res.cooldown || 120);
-      setSuccessMsg(res.message || (lang === "fa" ? "کد تأیید ۶ رقمی به ایمیل جدید ارسال شد." : "Verification code sent to new email."));
+      setSuccessMsg(
+        lang === "fa"
+          ? "کد تأیید به ایمیل جدید ارسال شد (اگر کد را دریافت نکردید، پوشه spam/هرزنامه ایمیل خود را بررسی کنید)."
+          : "Verification code sent to new email. (If you didn't receive the code, check your spam folder)"
+      );
     } catch (err: any) {
       setErrorMsg(err.message || (lang === "fa" ? "خطا در ارسال کد تأیید" : "Failed to send code"));
     } finally {
       setSendingCode(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    setErrorMsg("");
+    try {
+      await api.deleteAccount();
+      setIsProfileOpen(false);
+      logout();
+    } catch (err: any) {
+      setErrorMsg(err.message || (lang === "fa" ? "خطا در حذف حساب کاربری" : "Failed to delete account"));
+      setDeletingAccount(false);
     }
   };
 
@@ -237,11 +256,6 @@ export function UserProfileModal() {
               <div className="space-y-1.5 p-3 rounded-xl border border-primary/30 bg-primary/5 animate-in fade-in duration-200">
                 <label className="font-semibold text-primary text-xs flex items-center justify-between">
                   <span>{lang === "fa" ? "کد تأیید ۶ رقمی ایمیل جدید:" : "6-digit Verification Code:"}</span>
-                  {cooldown > 0 && (
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      {lang === "fa" ? `اعتبار: ${cooldown} ثانیه` : `${cooldown}s left`}
-                    </span>
-                  )}
                 </label>
                 <Input
                   type="text"
@@ -252,6 +266,11 @@ export function UserProfileModal() {
                   className="h-9 text-xs text-center font-mono tracking-widest text-base font-bold bg-background"
                   dir="ltr"
                 />
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {lang === "fa"
+                    ? "(اگر کد را دریافت نکردید، پوشه spam/هرزنامه ایمیل خود را بررسی کنید)"
+                    : "(If you did not receive the code, check your spam folder)"}
+                </p>
               </div>
             )}
 
@@ -265,20 +284,68 @@ export function UserProfileModal() {
             </Button>
           </form>
 
-          {/* Logout Action Button */}
-          <div className="pt-2 border-t">
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => {
-                setIsProfileOpen(false);
-                logout();
-              }}
-              className="w-full text-xs h-9 gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>{t.logout}</span>
-            </Button>
+          {/* Account Actions: Logout & Permanent Deletion */}
+          <div className="pt-3 border-t space-y-2">
+            {!showDeleteConfirm ? (
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    logout();
+                  }}
+                  className="flex-1 text-xs h-9 gap-2 text-slate-700 dark:text-slate-300"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>{t.logout}</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="text-xs h-9 gap-1.5 px-3 bg-rose-500/10 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 dark:border-rose-900/50 transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>{lang === "fa" ? "حذف حساب کاربری" : "Delete Account"}</span>
+                </Button>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl border border-rose-500/40 bg-rose-500/10 space-y-2.5 animate-in fade-in">
+                <div className="flex items-start gap-2 text-rose-600 dark:text-rose-400">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <p className="text-[11px] leading-relaxed">
+                    {lang === "fa"
+                      ? "آیا از حذف کامل حساب کاربری خود اطمینان دارید؟ این اقدام غیرقابل بازگشت است و تمامی داده‌ها، پروژه‌ها و وظایف شما برای همیشه حذف خواهند شد."
+                      : "Are you sure you want to permanently delete your account? This action cannot be undone."}
+                  </p>
+                </div>
+                <div className="flex gap-2 justify-end pt-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={deletingAccount}
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="h-8 text-xs px-3"
+                  >
+                    {lang === "fa" ? "انصراف" : "Cancel"}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    disabled={deletingAccount}
+                    onClick={handleDeleteAccount}
+                    className="h-8 text-xs px-3 gap-1.5 font-bold"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>{deletingAccount ? (lang === "fa" ? "در حال حذف..." : "Deleting...") : (lang === "fa" ? "تأیید و حذف دائمی حساب" : "Confirm Delete")}</span>
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
