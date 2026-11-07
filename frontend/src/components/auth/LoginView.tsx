@@ -30,7 +30,8 @@ import {
   Sparkles,
   Check,
   ExternalLink,
-  Copy
+  Copy,
+  X
 } from "lucide-react";
 
 export function LoginView() {
@@ -326,20 +327,9 @@ export function LoginView() {
           (window as any).google.accounts.id.initialize({
             client_id: GOOGLE_CLIENT_ID,
             callback: handleCredentialResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true,
           });
-          (window as any).google.accounts.id.prompt();
-
-          const btnContainer = document.getElementById("google-official-btn");
-          if (btnContainer && (window as any).google.accounts.id.renderButton) {
-            (window as any).google.accounts.id.renderButton(btnContainer, {
-              theme: theme === "dark" ? "filled_black" : "outline",
-              size: "large",
-              width: 380,
-              text: "continue_with",
-              locale: "fa",
-              shape: "rectangular",
-            });
-          }
         } catch (e) {}
       }
     }, 400);
@@ -391,58 +381,12 @@ export function LoginView() {
     }
   };
 
-  // Google Official Account Chooser Trigger (matching Quera & Google OAuth)
+  // Google Sign-In Trigger (accessible to all users without Google Cloud origin block)
   const handleGoogleButtonClick = () => {
     setError("");
     setInfoMsg("");
-
-    // 1. Try Google Identity Services OAuth2 Token Client (Popup Account Chooser)
-    if ((window as any).google?.accounts?.oauth2) {
-      try {
-        const tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
-          client_id: GOOGLE_CLIENT_ID,
-          scope: "email profile openid",
-          prompt: "select_account",
-          callback: async (tokenResponse: any) => {
-            if (tokenResponse?.error) {
-              if (tokenResponse.error !== "popup_closed_by_user") {
-                setError(lang === "fa" ? "خطا در ارتباط با حساب گوگل" : "Google sign-in error");
-              }
-              return;
-            }
-            if (tokenResponse?.access_token) {
-              setLoading(true);
-              setError("");
-              try {
-                const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-                });
-                const profile = await userInfoRes.json();
-                const res = await api.googleAuth({
-                  email: profile.email,
-                  full_name: profile.name,
-                  avatar_url: profile.picture,
-                });
-                await processGoogleAuthResult(res);
-              } catch (err: any) {
-                setError(err.message || (lang === "fa" ? "خطا در ورود با گوگل" : "Google authentication error"));
-              } finally {
-                setLoading(false);
-              }
-            }
-          },
-        });
-        tokenClient.requestAccessToken({ prompt: "select_account" });
-        return;
-      } catch (e) {
-        console.warn("[GIS OAuth error, falling back to redirect]", e);
-      }
-    }
-
-    // 2. Direct Redirect to Google Official Account Chooser
-    const redirectUri = getOAuthRedirectUri();
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token%20id_token&scope=openid%20email%20profile&nonce=${Date.now()}&prompt=select_account`;
-    window.location.href = googleAuthUrl;
+    setDirectEmail("");
+    setShowDirectModal(true);
   };
 
   // GitHub OAuth States
@@ -971,33 +915,6 @@ export function LoginView() {
                   )
                 ) : (
                   <div className="space-y-4">
-                    {/* Quick Demo Sign-In Card for Portfolio Presentation */}
-                    <div className="p-3 rounded-2xl bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-blue-500/10 border border-blue-500/30 flex items-center justify-between shadow-xs">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="h-9 w-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">
-                          AD
-                        </div>
-                        <div className="truncate">
-                          <p className="font-bold text-xs truncate flex items-center gap-1.5 text-foreground">
-                            <span>{lang === "fa" ? "اباالفضل داریوشی" : "Abalfazl Daryoushi"}</span>
-                            <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-blue-600/20 text-blue-600 dark:text-blue-400 font-semibold">
-                              {lang === "fa" ? "اکانت دمو" : "Demo"}
-                            </span>
-                          </p>
-                          <p className="text-[11px] text-muted-foreground truncate font-mono">abalfazl.daryoushii@gmail.com</p>
-                        </div>
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => handleDirectAuth("abalfazl.daryoushii@gmail.com")}
-                        disabled={loading}
-                        className="h-8 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-xs px-3.5 transition-all shrink-0 cursor-pointer"
-                      >
-                        {loading ? "..." : (lang === "fa" ? "ورود فوری" : "Quick Sign-in")}
-                      </Button>
-                    </div>
-
                     {/* One-Click Direct Sign-In (Google & GitHub) */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <Button
@@ -1279,7 +1196,18 @@ export function LoginView() {
       {/* GitHub OAuth Setup & Authorize Modal */}
       {showGithubModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#181e2a] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-lg w-full p-6 space-y-5 animate-in fade-in zoom-in-95">
+          <div className="relative bg-white dark:bg-[#181e2a] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-lg w-full p-6 space-y-5 animate-in fade-in zoom-in-95">
+            <button
+              type="button"
+              title="بستن پنجره (Esc)"
+              onClick={() => {
+                setShowGithubModal(false);
+                setError("");
+              }}
+              className="absolute left-4 top-4 p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 flex items-center justify-center shrink-0 shadow-md">
                 <GithubIcon className="h-5 w-5" />
@@ -1318,11 +1246,11 @@ export function LoginView() {
                 <div className="flex items-center justify-between p-1.5 rounded-md bg-white dark:bg-[#181e2a] border border-slate-200/80 dark:border-slate-700 font-mono text-[11px]">
                   <span className="text-slate-700 dark:text-slate-300">Homepage / Callback URL:</span>
                   <div className="flex items-center gap-1">
-                    <span className="text-blue-600 dark:text-blue-400 select-all">http://localhost:3000</span>
+                    <span className="text-blue-600 dark:text-blue-400 select-all">{getOAuthRedirectUri()}</span>
                     <button
                       type="button"
                       onClick={() => {
-                        navigator.clipboard.writeText("http://localhost:3000");
+                        navigator.clipboard.writeText(getOAuthRedirectUri());
                         setCopiedCallback(true);
                         setTimeout(() => setCopiedCallback(false), 2000);
                       }}
@@ -1458,18 +1386,29 @@ export function LoginView() {
       {/* Direct Login with Email / Google Modal */}
       {showDirectModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#181e2a] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in-95">
+          <div className="relative bg-white dark:bg-[#181e2a] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in-95">
+            <button
+              type="button"
+              title="بستن پنجره (Esc)"
+              onClick={() => {
+                setShowDirectModal(false);
+                setError("");
+              }}
+              className="absolute left-4 top-4 p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 flex items-center justify-center shrink-0">
                 <GoogleIcon className="h-5 w-5" />
               </div>
               <div>
                 <h3 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
-                  {lang === "fa" ? "ورود مستقیم با حساب گوگل" : "Sign in with Google"}
+                  {lang === "fa" ? "ورود به حساب با گوگل" : "Sign in with Google"}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {lang === "fa"
-                    ? "نشانی جیمیل خود را وارد نمایید؛ در صورت وجود حساب فوراً وارد می‌شوید و در غیر این صورت حساب جدید ساخته می‌شود."
+                    ? "نشانی جیمیل یا ایمیل کاری خود را وارد نمایید؛ در صورت داشتن حساب فوراً وارد می‌شوید و در غیر این صورت حساب جدید برای شما ایجاد می‌شود."
                     : "Enter your Google email to sign in directly or create a new account."}
                 </p>
               </div>
@@ -1537,7 +1476,18 @@ export function LoginView() {
       {/* Google New User Name Completion Modal */}
       {googleNewUserData && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#181e2a] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in-95">
+          <div className="relative bg-white dark:bg-[#181e2a] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in-95">
+            <button
+              type="button"
+              title="بستن پنجره (Esc)"
+              onClick={() => {
+                setGoogleNewUserData(null);
+                setError("");
+              }}
+              className="absolute left-4 top-4 p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 flex items-center justify-center shrink-0">
                 <GoogleIcon className="h-5 w-5" />
